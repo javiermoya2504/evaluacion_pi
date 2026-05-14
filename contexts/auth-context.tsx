@@ -1,0 +1,159 @@
+"use client"
+
+import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { useRouter } from "next/navigation"
+
+export type UserRole = "coordinadora_pi" | "jefe_asignatura" | "profesor"
+
+export interface User {
+  id: string
+  nombre: string
+  email: string
+  rol: UserRole
+  carrera?: string
+  asignatura?: string
+  avatar?: string
+}
+
+interface AuthContextType {
+  user: User | null
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<boolean>
+  logout: () => void
+  isCoordinadora: boolean
+  isJefeAsignatura: boolean
+  isProfesor: boolean
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+// Usuarios de demostración
+const demoUsers: Record<string, User & { password: string }> = {
+  "coordinadora@utt.edu.mx": {
+    id: "1",
+    nombre: "Dra. María González Hernández",
+    email: "coordinadora@utt.edu.mx",
+    rol: "coordinadora_pi",
+    carrera: "ISC / ITI",
+    password: "admin123",
+  },
+  "jefe.programacion@utt.edu.mx": {
+    id: "2",
+    nombre: "Ing. Carlos Ramírez López",
+    email: "jefe.programacion@utt.edu.mx",
+    rol: "jefe_asignatura",
+    asignatura: "Programación Web",
+    carrera: "ISC",
+    password: "jefe123",
+  },
+  "jefe.bd@utt.edu.mx": {
+    id: "3",
+    nombre: "Mtro. Roberto Sánchez Pérez",
+    email: "jefe.bd@utt.edu.mx",
+    rol: "jefe_asignatura",
+    asignatura: "Base de Datos",
+    carrera: "ISC",
+    password: "jefe123",
+  },
+  "profesor@utt.edu.mx": {
+    id: "4",
+    nombre: "Ing. Ana Martínez Ruiz",
+    email: "profesor@utt.edu.mx",
+    rol: "profesor",
+    carrera: "ISC",
+    password: "prof123",
+  },
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    // Verificar si hay una sesión guardada
+    const savedUser = localStorage.getItem("sigep_user")
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser))
+      } catch {
+        localStorage.removeItem("sigep_user")
+      }
+    }
+    setIsLoading(false)
+  }, [])
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true)
+    
+    // Simular delay de red
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    
+    const demoUser = demoUsers[email.toLowerCase()]
+    
+    if (demoUser && demoUser.password === password) {
+      const { password: _, ...userWithoutPassword } = demoUser
+      setUser(userWithoutPassword)
+      localStorage.setItem("sigep_user", JSON.stringify(userWithoutPassword))
+      setIsLoading(false)
+      return true
+    }
+    
+    setIsLoading(false)
+    return false
+  }
+
+  const logout = () => {
+    setUser(null)
+    localStorage.removeItem("sigep_user")
+    router.push("/login")
+  }
+
+  const isCoordinadora = user?.rol === "coordinadora_pi"
+  const isJefeAsignatura = user?.rol === "jefe_asignatura"
+  const isProfesor = user?.rol === "profesor"
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        logout,
+        isCoordinadora,
+        isJefeAsignatura,
+        isProfesor,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error("useAuth debe usarse dentro de un AuthProvider")
+  }
+  return context
+}
+
+// Función para obtener el nombre del rol en español
+export function getRoleName(rol: UserRole): string {
+  const roles: Record<UserRole, string> = {
+    coordinadora_pi: "Coordinadora de PI",
+    jefe_asignatura: "Jefe de Asignatura",
+    profesor: "Profesor Evaluador",
+  }
+  return roles[rol]
+}
+
+// Función para obtener el color del badge según el rol
+export function getRoleColor(rol: UserRole): string {
+  const colors: Record<UserRole, string> = {
+    coordinadora_pi: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+    jefe_asignatura: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    profesor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  }
+  return colors[rol]
+}
