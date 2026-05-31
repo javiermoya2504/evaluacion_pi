@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth, getRoleName, getRoleColor } from "@/contexts/auth-context"
+import { hasPermission } from "@/lib/permissions"
 import {
   LayoutDashboard,
   ClipboardList,
@@ -111,12 +112,12 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { user, logout, isCoordinadora, isJefeAsignatura, isProfesor } = useAuth()
 
-  // Filtrar navegación según el rol del usuario
+  // Filtrar navegación según el rol del usuario usando la biblioteca de permisos
   const filteredNavigation = navigation.filter(
-    (item) => user && item.roles.includes(user.rol)
+    (item) => user && hasPermission(user.rol, item.href)
   )
   const filteredSecondaryNav = secondaryNavigation.filter(
-    (item) => user && item.roles.includes(user.rol)
+    (item) => user && hasPermission(user.rol, item.href)
   )
 
   return (

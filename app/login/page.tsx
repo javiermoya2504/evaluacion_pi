@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { GraduationCap, Eye, EyeOff, Loader2, AlertCircle, User, Lock } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -24,7 +23,10 @@ export default function LoginPage() {
     setError("")
     setIsSubmitting(true)
 
-    const success = await login(email, password)
+    // Mapeo interno del correo del jefe para que funcione con el contexto de prueba sin cambiarlo
+    const targetEmail = email.toLowerCase() === "jefe@utt.edu.mx" ? "jefe.programacion@utt.edu.mx" : email
+
+    const success = await login(targetEmail, password)
 
     if (success) {
       router.push("/dashboard")
@@ -34,101 +36,88 @@ export default function LoginPage() {
     setIsSubmitting(false)
   }
 
-  const demoAccounts = [
-    {
-      role: "Coordinadora de PI",
-      email: "coordinadora@utt.edu.mx",
-      password: "admin123",
-      description: "Acceso completo al sistema",
-      color: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-    },
-    {
-      role: "Jefe de Asignatura",
-      email: "jefe.programacion@utt.edu.mx",
-      password: "jefe123",
-      description: "Crear rúbricas por materia",
-      color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    },
-    {
-      role: "Profesor Evaluador",
-      email: "profesor@utt.edu.mx",
-      password: "prof123",
-      description: "Evaluar proyectos finales",
-      color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    },
-  ]
-
-  const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
+  const handleDemoSelect = (demoEmail: string, demoPassword: string) => {
     setEmail(demoEmail)
     setPassword(demoPassword)
+    setShowPassword(false) // Asegurar que la contraseña permanezca oculta en el input
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      {/* Background decoration */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
-      </div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50/50 px-4 py-12 dark:bg-slate-950/50">
+      <div className="w-full max-w-[400px] space-y-6">
+        {/* Header institucional */}
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-900 text-white shadow-sm dark:bg-blue-600">
+            <GraduationCap className="h-6 w-6" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+              SIGEP-RI
+            </h1>
+            <p className="text-xs font-semibold text-blue-900/80 dark:text-blue-400 uppercase tracking-wider">
+              Universidad Tecnológica de Tijuana
+            </p>
+          </div>
+        </div>
 
-      <div className="relative z-10 flex w-full max-w-5xl flex-col gap-8 lg:flex-row lg:items-start">
-        {/* Login Card */}
-        <Card className="w-full border-border/50 bg-card/80 backdrop-blur-sm lg:max-w-md">
-          <CardHeader className="space-y-4 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-              <GraduationCap className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl font-bold tracking-tight">SIGEP-RI</CardTitle>
-              <CardDescription className="mt-1">
-                Sistema Inteligente para la Gestión y Evaluación de Proyectos Integradores
-              </CardDescription>
-            </div>
+        {/* Tarjeta de Login */}
+        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <CardHeader className="space-y-1.5 pb-4">
+            <CardTitle className="text-lg font-semibold text-center text-slate-900 dark:text-slate-50">
+              Acceso Institucional
+            </CardTitle>
+            <CardDescription className="text-xs text-center text-slate-500 dark:text-slate-400">
+              Portal de Gestión y Evaluación de Proyectos Integradores
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {error}
+                <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
+                  <span className="leading-normal">{error}</span>
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo institucional</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-medium text-slate-700 dark:text-slate-350">
+                  Correo institucional
+                </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="usuario@utt.edu.mx"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-9 text-sm border-slate-200 focus-visible:ring-blue-900 dark:border-slate-800 dark:focus-visible:ring-blue-600"
                     required
                     disabled={isSubmitting}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs font-medium text-slate-700 dark:text-slate-350">
+                  Contraseña
+                </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Tu contraseña"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
+                    className="pl-9 pr-9 text-sm border-slate-200 focus-visible:ring-blue-900 dark:border-slate-800 dark:focus-visible:ring-blue-600"
                     required
                     disabled={isSubmitting}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -136,7 +125,11 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full bg-blue-900 hover:bg-blue-855 text-white dark:bg-blue-600 dark:hover:bg-blue-700 mt-2 text-sm"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -148,64 +141,85 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p>Universidad Tecnológica de Tijuana</p>
-              <p className="mt-1">Ingeniería en Software e Informática</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Demo Accounts Card */}
-        <Card className="w-full border-border/50 bg-card/80 backdrop-blur-sm lg:flex-1">
-          <CardHeader>
-            <CardTitle className="text-lg">Cuentas de demostración</CardTitle>
-            <CardDescription>
-              Haz clic en una cuenta para autocompletar las credenciales
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {demoAccounts.map((account) => (
-              <button
-                key={account.email}
-                onClick={() => handleDemoLogin(account.email, account.password)}
-                className="w-full rounded-lg border border-border/50 bg-background/50 p-4 text-left transition-colors hover:border-primary/50 hover:bg-accent/50"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium",
-                          account.color
-                        )}
-                      >
-                        {account.role}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{account.description}</p>
+            {/* Acceso de prueba siempre visible */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <p className="text-xs font-semibold text-slate-750 dark:text-slate-300 text-left">
+                Acceso de prueba
+              </p>
+              <div className="grid grid-cols-1 gap-3 text-left">
+                {/* Coordinadora PI */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">Coordinadora PI</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[9px] px-2 text-slate-600 border-slate-200 hover:bg-slate-50 dark:text-slate-350 dark:border-slate-800 dark:hover:bg-slate-800"
+                      onClick={() => handleDemoSelect("coordinadora@utt.edu.mx", "admin123")}
+                    >
+                      Cargar
+                    </Button>
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal font-sans">
+                    <div>Email: <span className="font-mono text-slate-700 dark:text-slate-300">coordinadora@utt.edu.mx</span></div>
+                    <div>Contraseña: <span className="font-mono text-slate-700 dark:text-slate-300">admin123</span></div>
                   </div>
                 </div>
-                <div className="mt-3 space-y-1 rounded-md bg-muted/50 p-2 font-mono text-xs">
-                  <p>
-                    <span className="text-muted-foreground">Email:</span>{" "}
-                    <span className="text-foreground">{account.email}</span>
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Password:</span>{" "}
-                    <span className="text-foreground">{account.password}</span>
-                  </p>
-                </div>
-              </button>
-            ))}
 
-            <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-              <p className="text-sm text-amber-400">
-                <strong>Nota:</strong> Estas son cuentas de demostración para probar el sistema. 
-                En producción, las credenciales se validarán contra el sistema institucional.
-              </p>
+                {/* Jefe de Asignatura */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">Jefe de Asignatura</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[9px] px-2 text-slate-600 border-slate-200 hover:bg-slate-50 dark:text-slate-350 dark:border-slate-800 dark:hover:bg-slate-800"
+                      onClick={() => handleDemoSelect("jefe@utt.edu.mx", "jefe123")}
+                    >
+                      Cargar
+                    </Button>
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal font-sans">
+                    <div>Email: <span className="font-mono text-slate-700 dark:text-slate-300">jefe@utt.edu.mx</span></div>
+                    <div>Contraseña: <span className="font-mono text-slate-700 dark:text-slate-300">jefe123</span></div>
+                  </div>
+                </div>
+
+                {/* Profesor */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">Profesor</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[9px] px-2 text-slate-600 border-slate-200 hover:bg-slate-50 dark:text-slate-350 dark:border-slate-800 dark:hover:bg-slate-800"
+                      onClick={() => handleDemoSelect("profesor@utt.edu.mx", "prof123")}
+                    >
+                      Cargar
+                    </Button>
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal font-sans">
+                    <div>Email: <span className="font-mono text-slate-700 dark:text-slate-300">profesor@utt.edu.mx</span></div>
+                    <div>Contraseña: <span className="font-mono text-slate-700 dark:text-slate-300">prof123</span></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Footer institucional */}
+        <div className="text-center space-y-1 py-2">
+          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            Ingeniería en Software e Informática
+          </p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+            © {new Date().getFullYear()} UTT. Todos los derechos reservados.
+          </p>
+        </div>
       </div>
     </div>
   )

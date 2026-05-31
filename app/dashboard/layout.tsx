@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Loader2 } from "lucide-react"
+import { hasPermission } from "@/lib/permissions"
 
 export default function DashboardLayout({
   children,
@@ -13,12 +14,17 @@ export default function DashboardLayout({
 }) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login")
+    if (!isLoading) {
+      if (!user) {
+        router.push("/login")
+      } else if (!hasPermission(user.rol, pathname)) {
+        router.push("/dashboard")
+      }
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, pathname, router])
 
   if (isLoading) {
     return (
