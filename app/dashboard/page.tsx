@@ -94,8 +94,8 @@ function JefeAcademiaDashboard() {
   return (
     <div className="flex flex-col">
       <DashboardHeader 
-        title={`Bienvenido, ${user?.name?.split(" ")[0]}`}
-        description={`Panel de gestión de rúbricas - ${user?.materia || "Programación Web"}`}
+        title={`Bienvenido, ${user?.nombre?.split(" ")[0]}`}
+        description={`Panel de gestión de rúbricas - ${user?.asignatura || "Programación Web"}`}
       />
       
       <div className="flex-1 space-y-6 p-6">
@@ -284,7 +284,7 @@ function ProfesorEvaluadorDashboard() {
   return (
     <div className="flex flex-col">
       <DashboardHeader 
-        title={`Bienvenido, ${user?.name?.split(" ")[0]}`}
+        title={`Bienvenido, ${user?.nombre?.split(" ")[0]}`}
         description="Panel de evaluación final de Proyectos Integradores"
       />
       
@@ -453,11 +453,11 @@ export default function DashboardPage() {
   const { user } = useAuth()
 
   // Renderizar dashboard según el rol
-  if (user?.role === "jefe_academia") {
+  if (user?.rol === "jefe_asignatura") {
     return <JefeAcademiaDashboard />
   }
 
-  if (user?.role === "profesor") {
+  if (user?.rol === "profesor") {
     return <ProfesorEvaluadorDashboard />
   }
 

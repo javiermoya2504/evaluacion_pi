@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -61,6 +62,11 @@ export default function LoginPage() {
   const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
     setEmail(demoEmail)
     setPassword(demoPassword)
+  }
+
+  const handleGoogleLogin = () => {
+    setError("")
+    signIn("google", { callbackUrl: "/dashboard" })
   }
 
   return (
@@ -148,6 +154,25 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs uppercase text-muted-foreground">o</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleGoogleLogin}
+              disabled={isSubmitting}
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background text-sm font-bold text-foreground">
+                G
+              </span>
+              Continuar con Google
+            </Button>
+
             <div className="mt-6 text-center text-sm text-muted-foreground">
               <p>Universidad Tecnológica de Tijuana</p>
               <p className="mt-1">Ingeniería en Software e Informática</p>
@@ -200,7 +225,7 @@ export default function LoginPage() {
 
             <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
               <p className="text-sm text-amber-400">
-                <strong>Nota:</strong> Estas son cuentas de demostración para probar el sistema. 
+                <strong>Nota:</strong> Estas son cuentas de demostración para probar el sistema.
                 En producción, las credenciales se validarán contra el sistema institucional.
               </p>
             </div>
