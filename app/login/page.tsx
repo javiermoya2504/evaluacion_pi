@@ -66,7 +66,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => {
     setError("")
-    signIn("google", { callbackUrl: "/dashboard" })
+    signIn("google", { callbackUrl: "/dashboard" }, { prompt: "select_account" })
   }
 
   return (
