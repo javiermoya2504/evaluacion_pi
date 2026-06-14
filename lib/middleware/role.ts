@@ -7,9 +7,17 @@ import {
 } from "@/lib/auth"
 import type { AuthUser, Role } from "@/lib/types/auth"
 
-export type AuthenticatedHandler = (
+export type RouteParamsContext = {
+  params: Promise<Record<string, string>>
+}
+
+export type AuthenticatedContext<T extends RouteParamsContext = RouteParamsContext> = {
+  user: AuthUser
+} & T
+
+export type AuthenticatedHandler<T extends RouteParamsContext = RouteParamsContext> = (
   request: NextRequest,
-  context: { user: AuthUser },
+  context: AuthenticatedContext<T>,
 ) => Promise<NextResponse> | NextResponse
 
 export async function requireAuth(
@@ -26,7 +34,7 @@ export async function requireAuth(
 
 export function requireRole(
   user: AuthUser,
-  allowedRoles: Role[],
+  allowedRoles: readonly Role[],
 ): NextResponse | null {
   if (!allowedRoles.includes(user.rol)) {
     return forbiddenResponse()
@@ -35,20 +43,31 @@ export function requireRole(
   return null
 }
 
-export function withAuth(handler: AuthenticatedHandler) {
-  return async (request: NextRequest): Promise<NextResponse> => {
+export function withAuth<T extends RouteParamsContext = RouteParamsContext>(
+  handler: AuthenticatedHandler<T>,
+) {
+  return async (
+    request: NextRequest,
+    routeContext: T,
+  ): Promise<NextResponse> => {
     const authResult = await requireAuth(request)
 
     if (authResult instanceof NextResponse) {
       return authResult
     }
 
-    return handler(request, { user: authResult.user })
+    return handler(request, { user: authResult.user, ...routeContext })
   }
 }
 
-export function withRoles(allowedRoles: Role[], handler: AuthenticatedHandler) {
-  return async (request: NextRequest): Promise<NextResponse> => {
+export function withRoles<T extends RouteParamsContext = RouteParamsContext>(
+  allowedRoles: readonly Role[],
+  handler: AuthenticatedHandler<T>,
+) {
+  return async (
+    request: NextRequest,
+    routeContext: T,
+  ): Promise<NextResponse> => {
     const authResult = await requireAuth(request)
 
     if (authResult instanceof NextResponse) {
@@ -61,6 +80,6 @@ export function withRoles(allowedRoles: Role[], handler: AuthenticatedHandler) {
       return roleError
     }
 
-    return handler(request, { user: authResult.user })
+    return handler(request, { user: authResult.user, ...routeContext })
   }
 }
