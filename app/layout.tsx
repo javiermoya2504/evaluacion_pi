@@ -1,18 +1,7 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import './globals.css'
-
-const geist = Geist({ 
-  subsets: ["latin"],
-  variable: "--font-geist-sans"
-})
-
-const geistMono = Geist_Mono({ 
-  subsets: ["latin"],
-  variable: "--font-geist-mono"
-})
 
 export const metadata: Metadata = {
   title: 'SIGEP-RI | Sistema de Gestión de Proyectos Integradores',
@@ -49,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${geist.variable} ${geistMono.variable} bg-background`}>
+    <html lang="es" className="bg-background">
       <body className="font-sans antialiased min-h-screen">
         <AuthProvider>
           {children}
