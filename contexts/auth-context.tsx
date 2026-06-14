@@ -1,6 +1,14 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react"
 import { useRouter } from "next/navigation"
 import { SessionProvider, signOut, useSession } from "next-auth/react"
 
@@ -27,6 +35,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AUTH_STORAGE_KEY = "sigep_user"
+const AUTH_STORAGE_EVENT = "sigep-auth-change"
 
 const demoUsers: Record<string, User & { password: string }> = {
   "coordinadora@utt.edu.mx": {
@@ -74,60 +84,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 function AuthStateProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
   const { data: session, status } = useSession()
   const router = useRouter()
+  const storedUserValue = useSyncExternalStore(
+    subscribeToStoredUser,
+    getStoredUserValue,
+    () => null,
+  )
+  const storedUser = useMemo(() => parseStoredUser(storedUserValue), [storedUserValue])
+  const googleUser = useMemo(() => getGoogleUser(session?.user), [session?.user])
+  const user = googleUser ?? storedUser
+  const isLoading = status === "loading" || isAuthenticating
 
   useEffect(() => {
-    if (status === "loading") {
-      return
-    }
-
-    const googleUser = getGoogleUser(session?.user)
     if (googleUser) {
-      setUser(googleUser)
-      localStorage.removeItem("sigep_user")
-      setIsLoading(false)
-      return
+      clearStoredUser()
     }
-
-    const savedUser = localStorage.getItem("sigep_user")
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser))
-      } catch {
-        localStorage.removeItem("sigep_user")
-      }
-    } else {
-      setUser(null)
-    }
-
-    setIsLoading(false)
-  }, [session, status])
+  }, [googleUser])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true)
+    setIsAuthenticating(true)
 
     await new Promise((resolve) => setTimeout(resolve, 800))
 
     const demoUser = demoUsers[email.toLowerCase()]
 
     if (demoUser && demoUser.password === password) {
-      const { password: _, ...userWithoutPassword } = demoUser
-      setUser(userWithoutPassword)
-      localStorage.setItem("sigep_user", JSON.stringify(userWithoutPassword))
-      setIsLoading(false)
+      const userWithoutPassword = removePassword(demoUser)
+      setStoredUser(userWithoutPassword)
+      setIsAuthenticating(false)
       return true
     }
 
-    setIsLoading(false)
+    setIsAuthenticating(false)
     return false
   }
 
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem("sigep_user")
+    clearStoredUser()
 
     if (status === "authenticated") {
       signOut({ callbackUrl: "/login" })
@@ -177,7 +172,7 @@ function getGoogleUser(sessionUser: unknown): User | null {
   const demoUser = demoUsers[email]
 
   if (demoUser) {
-    const { password: _, ...userWithoutPassword } = demoUser
+    const userWithoutPassword = removePassword(demoUser)
     return {
       ...userWithoutPassword,
       nombre: userData.name || userWithoutPassword.nombre,
@@ -193,6 +188,46 @@ function getGoogleUser(sessionUser: unknown): User | null {
     carrera: "ISC",
     avatar: userData.image || undefined,
   }
+}
+
+function subscribeToStoredUser(onChange: () => void) {
+  window.addEventListener("storage", onChange)
+  window.addEventListener(AUTH_STORAGE_EVENT, onChange)
+  return () => {
+    window.removeEventListener("storage", onChange)
+    window.removeEventListener(AUTH_STORAGE_EVENT, onChange)
+  }
+}
+
+function getStoredUserValue() {
+  return localStorage.getItem(AUTH_STORAGE_KEY)
+}
+
+function parseStoredUser(value: string | null): User | null {
+  if (!value) return null
+
+  try {
+    return JSON.parse(value) as User
+  } catch {
+    return null
+  }
+}
+
+function setStoredUser(user: User) {
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
+  window.dispatchEvent(new Event(AUTH_STORAGE_EVENT))
+}
+
+function clearStoredUser() {
+  if (!localStorage.getItem(AUTH_STORAGE_KEY)) return
+  localStorage.removeItem(AUTH_STORAGE_KEY)
+  window.dispatchEvent(new Event(AUTH_STORAGE_EVENT))
+}
+
+function removePassword(user: User & { password: string }): User {
+  const { password, ...userWithoutPassword } = user
+  void password
+  return userWithoutPassword
 }
 
 export function useAuth() {
