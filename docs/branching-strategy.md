@@ -6,10 +6,11 @@ Este proyecto utiliza una estrategia ligera de ramas orientada a sprints.
 
 - `main`: contiene solo versiones aprobadas y listas para entrega o despliegue.
 - `feature`: rama de integracion donde se concentra el trabajo de los sprints.
+- `dev`: rama de validacion donde se revisan y fusionan los sprints terminados.
 
-`main` no debe recibir commits directos. La promocion de `feature` a `main` se
-realiza mediante pull request unicamente cuando la etapa completa haya sido
-revisada y autorizada por el responsable del proyecto.
+`main` no debe recibir commits directos. El trabajo pasa de `feature` a `dev`
+mediante pull request. Solo cuando la etapa completa haya sido revisada y
+autorizada se abre el pull request de `dev` hacia `main`.
 
 ## Flujo de trabajo
 
@@ -17,9 +18,11 @@ revisada y autorizada por el responsable del proyecto.
 2. Implementar y verificar el alcance del sprint en `feature`.
 3. Publicar los cambios en `origin/feature` para la integracion del equipo.
 4. Corregir cualquier fallo reportado por CI antes de cerrar el sprint.
-5. Al terminar todos los sprints de una etapa, abrir un pull request de
-   `feature` hacia `main` solo después de recibir autorizacion explicita.
-6. Fusionar el pull request mediante **Squash and merge** para mantener un
+5. Abrir un pull request de `feature` hacia `dev`, solicitar al menos una
+   review y fusionarlo cuando CI y la review esten aprobados.
+6. Al terminar todos los sprints de una etapa, abrir un pull request de `dev`
+   hacia `main` solo despues de recibir autorizacion explicita.
+7. Fusionar el pull request mediante **Squash and merge** para mantener un
    historial de entregas claro.
 
 Para cambios que necesiten revision aislada, se puede crear una rama temporal
@@ -30,7 +33,7 @@ desde `feature` con alguno de estos prefijos:
 - `docs/<descripcion>` para documentacion.
 - `chore/<descripcion>` para mantenimiento o DevOps.
 
-Las ramas temporales regresan a `feature`, nunca directamente a `main`, y se
+Las ramas temporales regresan a `feature`, nunca directamente a `dev` o `main`, y se
 eliminan despues de fusionarse.
 
 ## Convencion de commits
@@ -58,6 +61,9 @@ Configurar una regla para `main` con:
 Configurar `feature` con el workflow `CI / validate` obligatorio y bloqueo de
 force pushes. Los pushes directos pueden mantenerse mientras sea el flujo
 acordado por el equipo.
+
+Configurar `dev` con pull request obligatorio, al menos una aprobacion y el
+workflow `CI / validate` aprobado.
 
 ## Correcciones urgentes
 

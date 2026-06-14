@@ -4,8 +4,9 @@
 
 - [Estrategia de ramas](docs/branching-strategy.md)
 - CI base en `.github/workflows/ci.yml` para validar TypeScript y el build en
-  `feature` y `main`.
+  cada pull request y en los pushes a `feature`, `dev` y `main`.
 - Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
+- Orquestacion local en `compose.yaml`.
 
 La aplicacion actual es un proyecto Next.js full-stack. Las paginas y las rutas
 API de `app/api` se compilan en un mismo runtime standalone; por ello ambos
@@ -16,7 +17,17 @@ para el entregable de frontend y backend.
 docker build -f Dockerfile.frontend -t evaluacion-pi-frontend .
 docker build -f Dockerfile.backend -t evaluacion-pi-backend .
 docker run --rm -p 3000:3000 --env-file .env.local evaluacion-pi-frontend
+docker compose up --build --wait
+docker compose down
 ```
+
+El servicio `frontend` queda disponible en `http://localhost:3000` y el
+servicio `backend` en `http://localhost:3001`. Ambos reutilizan `.env.local`
+cuando el archivo existe.
+
+En GitHub Actions, el secreto del repositorio `JWT_SECRET` se inyecta como
+`NEXTAUTH_SECRET` durante el build. CI falla de forma explicita en ramas del
+repositorio si el secreto no esta configurado.
 
 ### Validacion Docker del Sprint 0
 

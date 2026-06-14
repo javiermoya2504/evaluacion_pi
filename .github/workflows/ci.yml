@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - feature
+      - dev
       - main
   pull_request:
-    branches:
-      - feature
-      - main
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -42,8 +40,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Docker Compose
+        run: docker compose config --quiet
+
+      - name: Verify JWT secret
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: test -n "$JWT_SECRET"
+
       - name: Check TypeScript
         run: pnpm typecheck
 
       - name: Build application
         run: pnpm build
+        env:
+          NEXTAUTH_SECRET: ${{ secrets.JWT_SECRET }}
