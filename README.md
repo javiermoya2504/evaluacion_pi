@@ -1,5 +1,23 @@
 # evaluaci-n_pi
 
+## DevOps
+
+- [Estrategia de ramas](docs/branching-strategy.md)
+- CI base en `.github/workflows/ci.yml` para validar TypeScript y el build en
+  `feature` y `main`.
+- Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
+
+La aplicacion actual es un proyecto Next.js full-stack. Las paginas y las rutas
+API de `app/api` se compilan en un mismo runtime standalone; por ello ambos
+Dockerfiles generan hoy el mismo artefacto, aunque conservan nombres separados
+para el entregable de frontend y backend.
+
+```bash
+docker build -f Dockerfile.frontend -t evaluacion-pi-frontend .
+docker build -f Dockerfile.backend -t evaluacion-pi-backend .
+docker run --rm -p 3000:3000 --env-file .env.local evaluacion-pi-frontend
+```
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
 
 ## Built with v0
