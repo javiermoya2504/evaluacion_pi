@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   validate:
-    name: Typecheck and build
+    name: Lint, typecheck and build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -52,7 +52,7 @@ jobs:
       - name: Check TypeScript
         run: pnpm typecheck
 
-      - name: Build application
+      - name: Build application (includes lint)
         run: pnpm build
         env:
           NEXTAUTH_SECRET: ${{ secrets.JWT_SECRET }}

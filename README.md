@@ -3,8 +3,11 @@
 ## DevOps
 
 - [Estrategia de ramas](docs/branching-strategy.md)
-- CI base en `.github/workflows/ci.yml` para validar TypeScript y el build en
-  cada pull request y en los pushes a `feature`, `dev` y `main`.
+- [Variables de entorno](docs/environment-variables.md)
+- CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
+  build en cada pull request y en los pushes a `feature`, `dev` y `main`.
+- Preview automatico de Vercel para cada pull request mediante la integracion
+  nativa del repositorio con Vercel.
 - Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
 - Orquestacion local en `compose.yaml`.
 
@@ -28,6 +31,9 @@ cuando el archivo existe.
 En GitHub Actions, el secreto del repositorio `JWT_SECRET` se inyecta como
 `NEXTAUTH_SECRET` durante el build. CI falla de forma explicita en ramas del
 repositorio si el secreto no esta configurado.
+
+`pnpm build` ejecuta ESLint antes de compilar. Cualquier error de ESLint o
+TypeScript detiene el build y bloquea la validacion del pull request.
 
 ### Validacion Docker del Sprint 0
 
