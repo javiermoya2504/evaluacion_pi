@@ -18,6 +18,18 @@ docker build -f Dockerfile.backend -t evaluacion-pi-backend .
 docker run --rm -p 3000:3000 --env-file .env.local evaluacion-pi-frontend
 ```
 
+### Validacion Docker del Sprint 0
+
+Las imagenes se construyeron y probaron localmente con Docker Desktop:
+
+- `evaluacion-pi-frontend:sprint-0`: `/login` respondio HTTP 200.
+- `evaluacion-pi-backend:sprint-0`: `/api/auth/providers` respondio HTTP 200.
+- Ambas imagenes ejecutan el proceso con el usuario no privilegiado `nextjs`.
+
+Las imagenes Docker no se almacenan directamente en Git. El repositorio guarda
+los Dockerfiles reproducibles; las imagenes se generan con los comandos
+documentados arriba o se publican posteriormente en un registro de contenedores.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
 
 ## Built with v0
