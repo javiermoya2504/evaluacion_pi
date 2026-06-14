@@ -4,8 +4,10 @@
 
 - [Estrategia de ramas](docs/branching-strategy.md)
 - [Variables de entorno](docs/environment-variables.md)
+- [Cierre DevOps del Sprint 3](docs/sprint-3-devops.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
-  build en cada pull request y en los pushes a `feature`, `dev` y `main`.
+  test suite y build en cada pull request y en los pushes a `feature`, `dev` y
+  `main`.
 - Preview automatico de Vercel para cada pull request mediante la integracion
   nativa del repositorio con Vercel.
 - Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
