@@ -3,14 +3,21 @@
 No se deben guardar valores reales ni secretos en Git. Para desarrollo local,
 copiar `.env.example` a `.env.local` y reemplazar los valores de ejemplo.
 
+Para Sprint 4 se agregaron ejemplos separados por ambiente:
+
+- `.env.development.example`: desarrollo local/dev.
+- `.env.staging.example`: staging en Railway.
+
 ## Aplicacion
 
 | Variable | Obligatoria | Alcance | Descripcion |
 | --- | --- | --- | --- |
-| `NEXTAUTH_URL` | Si, excepto Vercel | Local, Produccion | URL canonica de la aplicacion. Vercel puede detectarla automaticamente si expone sus variables de sistema. |
-| `NEXTAUTH_SECRET` | Si | Local, Preview, Produccion | Secreto largo y aleatorio usado para firmar sesiones de NextAuth. |
-| `GOOGLE_CLIENT_ID` | Si | Local, Preview, Produccion | Identificador OAuth 2.0 del cliente de Google. |
-| `GOOGLE_CLIENT_SECRET` | Si | Local, Preview, Produccion | Secreto OAuth 2.0 del cliente de Google. |
+| `APP_ENV` | No | Local, Dev, Staging | Nombre interno del ambiente. Usar `development` o `staging`. |
+| `NEXT_PUBLIC_APP_ENV` | No | Local, Dev, Staging | Nombre del ambiente visible en el cliente. No debe contener secretos. |
+| `NEXTAUTH_URL` | Si, excepto Vercel | Local, Dev, Staging, Produccion | URL canonica de la aplicacion. En Railway debe coincidir con el dominio publico del ambiente. |
+| `NEXTAUTH_SECRET` | Si | Local, Dev, Staging, Preview, Produccion | Secreto largo y aleatorio usado para firmar sesiones de NextAuth. Debe ser distinto por ambiente. |
+| `GOOGLE_CLIENT_ID` | Si | Local, Dev, Staging, Preview, Produccion | Identificador OAuth 2.0 del cliente de Google. |
+| `GOOGLE_CLIENT_SECRET` | Si | Local, Dev, Staging, Preview, Produccion | Secreto OAuth 2.0 del cliente de Google. |
 
 `AUTH_GOOGLE_ID` y `AUTH_GOOGLE_SECRET` se aceptan como alias de compatibilidad,
 pero la configuracion recomendada usa `GOOGLE_CLIENT_ID` y
@@ -25,6 +32,21 @@ pero la configuracion recomendada usa `GOOGLE_CLIENT_ID` y
 El secreto se configura en **Settings > Secrets and variables > Actions** del
 repositorio. No debe agregarse a `.env.example` porque pertenece a CI y su valor
 debe permanecer secreto.
+
+## Railway
+
+Railway debe tener ambientes separados para `dev` y `staging`. Cada ambiente
+debe configurar sus propios valores de `NEXTAUTH_URL`, `NEXTAUTH_SECRET`,
+`GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`.
+
+El archivo `railway.json` define el Dockerfile de despliegue, healthcheck y
+overrides por ambiente. Los valores reales de variables se cargan desde el
+dashboard de Railway y no deben entrar al repositorio.
+
+Ver tambien:
+
+- [Railway staging](railway-staging.md)
+- [Sprint 4 - Buffer](sprint-4-buffer.md)
 
 ## Vercel
 
