@@ -1,47 +1,29 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useAuth, getRoleColor, getRoleName, type UserRole } from "@/contexts/auth-context"
+import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
-import { useAuth, getRoleName, getRoleColor } from "@/contexts/auth-context"
-import {
-  LayoutDashboard,
-  ClipboardList,
-  Users,
-  FileBarChart,
-  Bell,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  GraduationCap,
-  BookOpen,
-  FileCheck,
-  LogOut,
-  User,
-} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  BarChart3,
+  BookOpenCheck,
+  ClipboardList,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  ShieldCheck,
+  Users,
+} from "lucide-react"
 
 type NavigationItem = {
   name: string
   href: string
   icon: typeof LayoutDashboard
   description: string
-  roles: ("coordinadora_pi" | "jefe_asignatura" | "profesor")[]
+  roles: UserRole[]
 }
 
 const navigation: NavigationItem[] = [
@@ -49,20 +31,20 @@ const navigation: NavigationItem[] = [
     name: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
-    description: "Vista general del sistema",
+    description: "Resumen por rol",
     roles: ["coordinadora_pi", "jefe_asignatura", "profesor"],
   },
   {
-    name: "Rúbricas",
+    name: "Rubricas",
     href: "/dashboard/rubricas",
     icon: ClipboardList,
-    description: "Gestión de rúbricas académicas",
+    description: "Criterios y ponderaciones",
     roles: ["coordinadora_pi", "jefe_asignatura"],
   },
   {
     name: "Proyectos",
     href: "/dashboard/proyectos",
-    icon: BookOpen,
+    icon: BookOpenCheck,
     description: "Proyectos integradores",
     roles: ["coordinadora_pi", "jefe_asignatura"],
   },
@@ -70,257 +52,98 @@ const navigation: NavigationItem[] = [
     name: "Equipos",
     href: "/dashboard/equipos",
     icon: Users,
-    description: "Gestión de equipos",
+    description: "Equipos participantes",
     roles: ["coordinadora_pi"],
   },
   {
     name: "Evaluaciones",
     href: "/dashboard/evaluaciones",
-    icon: FileCheck,
-    description: "Evaluación de proyectos",
+    icon: ShieldCheck,
+    description: "Aplicacion de rubricas",
     roles: ["coordinadora_pi", "profesor"],
   },
   {
     name: "Reportes",
     href: "/dashboard/reportes",
-    icon: FileBarChart,
-    description: "Reportes y estadísticas",
-    roles: ["coordinadora_pi"],
-  },
-]
-
-const secondaryNavigation: NavigationItem[] = [
-  {
-    name: "Notificaciones",
-    href: "/dashboard/notificaciones",
-    icon: Bell,
-    description: "Centro de notificaciones",
-    roles: ["coordinadora_pi", "jefe_asignatura", "profesor"],
-  },
-  {
-    name: "Configuración",
-    href: "/dashboard/configuracion",
-    icon: Settings,
-    description: "Ajustes del sistema",
+    icon: BarChart3,
+    description: "Indicadores y resultados",
     roles: ["coordinadora_pi"],
   },
 ]
 
 export function AppSidebar() {
-  const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
-  const { user, logout, isCoordinadora, isJefeAsignatura, isProfesor } = useAuth()
+  const { user, logout } = useAuth()
 
-  // Filtrar navegación según el rol del usuario
   const filteredNavigation = navigation.filter(
-    (item) => user && item.roles.includes(user.rol)
-  )
-  const filteredSecondaryNav = secondaryNavigation.filter(
-    (item) => user && item.roles.includes(user.rol)
+    (item) => user && item.roles.includes(user.rol) && hasPermission(user.rol, item.href)
   )
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <aside
-        className={cn(
-          "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300",
-          collapsed ? "w-16" : "w-64"
-        )}
-      >
-        {/* Logo */}
-        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <GraduationCap className="h-5 w-5 text-primary-foreground" />
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
+      <div className="border-b border-sidebar-border p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
+            <GraduationCap className="h-6 w-6" />
           </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-sidebar-foreground">SIGEP-RI</span>
-              <span className="text-xs text-muted-foreground">Proyectos Integradores</span>
-            </div>
-          )}
+          <div>
+            <p className="text-lg font-semibold tracking-tight">SIGEP-PI</p>
+            <p className="text-xs font-medium text-white/58">Universidad Politecnica de Queretaro</p>
+          </div>
         </div>
+      </div>
 
-        {/* User Role Badge */}
-        {!collapsed && user && (
-          <div className="border-b border-sidebar-border px-4 py-3">
-            <span
+      {user && (
+        <div className="border-b border-sidebar-border p-4">
+          <Badge className={cn("mb-3 w-full justify-center border py-1.5", getRoleColor(user.rol))}>
+            {getRoleName(user.rol)}
+          </Badge>
+          <div className="rounded-xl bg-white/8 p-3">
+            <p className="truncate text-sm font-semibold">{user.nombre}</p>
+            <p className="mt-1 truncate text-xs text-white/58">{user.asignatura || user.carrera}</p>
+          </div>
+        </div>
+      )}
+
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <p className="px-3 pb-2 pt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white/45">
+          Navegacion
+        </p>
+        {filteredNavigation.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          const Icon = item.icon
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
               className={cn(
-                "inline-flex w-full justify-center rounded-md border px-2 py-1 text-xs font-medium",
-                getRoleColor(user.rol)
+                "group flex items-start gap-3 rounded-xl px-3 py-3 transition",
+                isActive
+                  ? "bg-sidebar-accent text-white shadow-sm"
+                  : "text-white/68 hover:bg-white/8 hover:text-white"
               )}
             >
-              {getRoleName(user.rol)}
-            </span>
-          </div>
-        )}
-
-        {/* Main Navigation */}
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
-          <div className="mb-2 px-2">
-            {!collapsed && (
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Principal
+              <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", isActive ? "text-sidebar-primary" : "text-white/52")} />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">{item.name}</span>
+                <span className="mt-0.5 block text-xs text-white/48 group-hover:text-white/60">{item.description}</span>
               </span>
-            )}
-          </div>
-          {filteredNavigation.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-            return collapsed ? (
-              <Tooltip key={item.name}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-lg mx-auto transition-colors",
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-primary"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="flex flex-col">
-                  <span className="font-medium">{item.name}</span>
-                  <span className="text-xs text-muted-foreground">{item.description}</span>
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                <span className="text-sm font-medium">{item.name}</span>
-              </Link>
-            )
-          })}
+            </Link>
+          )
+        })}
+      </nav>
 
-          {/* Secondary Navigation */}
-          {filteredSecondaryNav.length > 0 && (
-            <div className="my-4 border-t border-sidebar-border pt-4">
-              {!collapsed && (
-                <span className="mb-2 block px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Sistema
-                </span>
-              )}
-              {filteredSecondaryNav.map((item) => {
-                const isActive = pathname === item.href
-                return collapsed ? (
-                  <Tooltip key={item.name}>
-                    <TooltipTrigger asChild>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          "flex h-10 w-10 items-center justify-center rounded-lg mx-auto transition-colors",
-                          isActive
-                            ? "bg-sidebar-accent text-sidebar-primary"
-                            : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                        )}
-                      >
-                        <item.icon className="h-5 w-5" />
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="flex flex-col">
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-xs text-muted-foreground">{item.description}</span>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-primary"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5 shrink-0" />
-                    <span className="text-sm font-medium">{item.name}</span>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </nav>
-
-        {/* User Section */}
-        <div className="border-t border-sidebar-border p-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-sidebar-accent",
-                  collapsed && "justify-center"
-                )}
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                {!collapsed && user && (
-                  <div className="flex flex-1 flex-col overflow-hidden">
-                    <span className="truncate text-sm font-medium text-sidebar-foreground">
-                      {user.nombre}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {user.asignatura || user.carrera}
-                    </span>
-                  </div>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {user && (
-                <>
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{user.nombre}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/perfil" className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  Mi perfil
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={logout}
-                className="text-destructive focus:text-destructive"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar sesión
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Collapse Button */}
+      <div className="border-t border-sidebar-border p-4">
         <Button
           variant="ghost"
-          size="icon"
-          className="absolute -right-3 top-20 h-6 w-6 rounded-full border border-border bg-background hover:bg-accent"
-          onClick={() => setCollapsed(!collapsed)}
+          className="w-full justify-start text-white/70 hover:bg-white/8 hover:text-white"
+          onClick={logout}
         >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
+          <LogOut className="mr-2 h-4 w-4" />
+          Cerrar sesion
         </Button>
-      </aside>
-    </TooltipProvider>
+      </div>
+    </aside>
   )
 }
