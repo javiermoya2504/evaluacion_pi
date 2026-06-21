@@ -230,6 +230,7 @@ function ProfesorEvaluacionPage() {
   const [expandedCategories, setExpandedCategories] = useState<number[]>([1, 2, 3, 4])
   const [puntajes, setPuntajes] = useState<Record<number, number>>({})
   const [observaciones, setObservaciones] = useState<Record<number, string>>({})
+  const [evaluationStatus, setEvaluationStatus] = useState<"draft" | "saved" | "submitted">("draft")
   const [retroalimentacion, setRetroalimentacion] = useState({
     fortalezas: "",
     mejoras: "",
@@ -243,10 +244,12 @@ function ProfesorEvaluacionPage() {
   }
 
   const handlePuntajeChange = (criterioId: number, value: number[]) => {
+    setEvaluationStatus("draft")
     setPuntajes(prev => ({ ...prev, [criterioId]: value[0] }))
   }
 
   const handleObservacionChange = (criterioId: number, value: string) => {
+    setEvaluationStatus("draft")
     setObservaciones(prev => ({ ...prev, [criterioId]: value }))
   }
 
@@ -273,10 +276,15 @@ function ProfesorEvaluacionPage() {
     setPuntajes({})
     setObservaciones({})
     setRetroalimentacion({ fortalezas: "", mejoras: "", recomendaciones: "" })
+    setEvaluationStatus("draft")
     setIsEvaluationOpen(true)
   }
 
   const totales = calcularTotalGeneral()
+  const totalCriterios = rubricaGlobalPI.categorias.reduce((acc, cat) => acc + cat.criterios.length, 0)
+  const criteriosCalificados = Object.values(puntajes).filter((value) => value > 0).length
+  const avanceEvaluacion = Math.round((criteriosCalificados / totalCriterios) * 100)
+  const canSubmit = criteriosCalificados === totalCriterios && retroalimentacion.fortalezas.trim().length > 0
 
   return (
     <div className="flex flex-col">
@@ -421,6 +429,38 @@ function ProfesorEvaluacionPage() {
               </CardContent>
             </Card>
 
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4">
+                <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Avance de captura</span>
+                      <span className="font-semibold">{avanceEvaluacion}%</span>
+                    </div>
+                    <Progress value={avanceEvaluacion} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {criteriosCalificados} de {totalCriterios} criterios calificados. Para enviar, agrega tambien retroalimentacion general.
+                    </p>
+                  </div>
+                  <Badge
+                    className={
+                      evaluationStatus === "submitted"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : evaluationStatus === "saved"
+                          ? "bg-blue-500/10 text-blue-600"
+                          : "bg-amber-500/10 text-amber-600"
+                    }
+                  >
+                    {evaluationStatus === "submitted"
+                      ? "Evaluacion enviada"
+                      : evaluationStatus === "saved"
+                        ? "Borrador guardado"
+                        : "Cambios sin guardar"}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
             <Tabs defaultValue="criterios" className="mt-4">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="criterios">Criterios de Evaluación</TabsTrigger>
@@ -548,7 +588,10 @@ function ProfesorEvaluacionPage() {
                         className="mt-2"
                         rows={3}
                         value={retroalimentacion.fortalezas}
-                        onChange={(e) => setRetroalimentacion(prev => ({ ...prev, fortalezas: e.target.value }))}
+                        onChange={(e) => {
+                          setEvaluationStatus("draft")
+                          setRetroalimentacion(prev => ({ ...prev, fortalezas: e.target.value }))
+                        }}
                       />
                     </div>
                     <div>
@@ -558,7 +601,10 @@ function ProfesorEvaluacionPage() {
                         className="mt-2"
                         rows={3}
                         value={retroalimentacion.mejoras}
-                        onChange={(e) => setRetroalimentacion(prev => ({ ...prev, mejoras: e.target.value }))}
+                        onChange={(e) => {
+                          setEvaluationStatus("draft")
+                          setRetroalimentacion(prev => ({ ...prev, mejoras: e.target.value }))
+                        }}
                       />
                     </div>
                     <div>
@@ -568,7 +614,10 @@ function ProfesorEvaluacionPage() {
                         className="mt-2"
                         rows={3}
                         value={retroalimentacion.recomendaciones}
-                        onChange={(e) => setRetroalimentacion(prev => ({ ...prev, recomendaciones: e.target.value }))}
+                        onChange={(e) => {
+                          setEvaluationStatus("draft")
+                          setRetroalimentacion(prev => ({ ...prev, recomendaciones: e.target.value }))
+                        }}
                       />
                     </div>
                   </CardContent>
@@ -580,11 +629,11 @@ function ProfesorEvaluacionPage() {
               <Button variant="outline" onClick={() => setIsEvaluationOpen(false)}>
                 Cancelar
               </Button>
-              <Button variant="secondary" className="gap-2">
+              <Button variant="secondary" className="gap-2" onClick={() => setEvaluationStatus("saved")}>
                 <Save className="h-4 w-4" />
                 Guardar Borrador
               </Button>
-              <Button className="gap-2">
+              <Button className="gap-2" disabled={!canSubmit} onClick={() => setEvaluationStatus("submitted")}>
                 <Send className="h-4 w-4" />
                 Enviar Evaluación
               </Button>
@@ -682,7 +731,7 @@ function CoordinadoraEvaluacionPage() {
             />
           </div>
           <Select value={filterEstado} onValueChange={setFilterEstado}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[230px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
@@ -768,8 +817,29 @@ export default function EvaluacionesPage() {
   const { user } = useAuth()
 
   // Profesor solo ve la vista de evaluación final
-  if (user?.role === "profesor") {
+  if (user?.rol === "profesor") {
     return <ProfesorEvaluacionPage />
+  }
+
+  if (user?.rol === "jefe_asignatura") {
+    return (
+      <div className="flex flex-col">
+        <DashboardHeader
+          title="Acceso restringido"
+          description="Tu rol no tiene permisos para consultar evaluaciones"
+        />
+        <div className="p-6">
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="p-6">
+              <p className="font-semibold text-amber-950">Modulo reservado para Coordinadora PI y Profesor evaluador.</p>
+              <p className="mt-2 text-sm text-amber-800">
+                Como jefe de asignatura puedes trabajar en rubricas y proyectos asociados a tu materia.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   // Coordinadora ve la vista completa de supervisión

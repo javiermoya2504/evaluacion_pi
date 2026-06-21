@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 
 export type UserRole = "coordinadora_pi" | "jefe_asignatura" | "profesor"
@@ -27,40 +27,64 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Usuarios de demostración
 const demoUsers: Record<string, User & { password: string }> = {
+  "coordinadora@upq.mx": {
+    id: "1",
+    nombre: "Dra. Laura Mendoza Rivera",
+    email: "coordinadora@upq.mx",
+    rol: "coordinadora_pi",
+    carrera: "Ingenieria en Software",
+    password: "admin123",
+  },
+  "jefe@upq.mx": {
+    id: "2",
+    nombre: "Mtro. Daniel Hernandez Soto",
+    email: "jefe@upq.mx",
+    rol: "jefe_asignatura",
+    asignatura: "Desarrollo de Software",
+    carrera: "Ingenieria en Software",
+    password: "jefe123",
+  },
+  "profesor@upq.mx": {
+    id: "3",
+    nombre: "Ing. Ana Sofia Torres Vega",
+    email: "profesor@upq.mx",
+    rol: "profesor",
+    carrera: "Ingenieria en Software",
+    password: "prof123",
+  },
   "coordinadora@utt.edu.mx": {
     id: "1",
-    nombre: "Dra. María González Hernández",
-    email: "coordinadora@utt.edu.mx",
+    nombre: "Dra. Laura Mendoza Rivera",
+    email: "coordinadora@upq.mx",
     rol: "coordinadora_pi",
-    carrera: "ISC / ITI",
+    carrera: "Ingenieria en Software",
     password: "admin123",
   },
   "jefe.programacion@utt.edu.mx": {
     id: "2",
-    nombre: "Ing. Carlos Ramírez López",
-    email: "jefe.programacion@utt.edu.mx",
+    nombre: "Mtro. Daniel Hernandez Soto",
+    email: "jefe@upq.mx",
     rol: "jefe_asignatura",
-    asignatura: "Programación Web",
-    carrera: "ISC",
+    asignatura: "Desarrollo de Software",
+    carrera: "Ingenieria en Software",
     password: "jefe123",
   },
-  "jefe.bd@utt.edu.mx": {
-    id: "3",
-    nombre: "Mtro. Roberto Sánchez Pérez",
-    email: "jefe.bd@utt.edu.mx",
+  "jefe@utt.edu.mx": {
+    id: "2",
+    nombre: "Mtro. Daniel Hernandez Soto",
+    email: "jefe@upq.mx",
     rol: "jefe_asignatura",
-    asignatura: "Base de Datos",
-    carrera: "ISC",
+    asignatura: "Desarrollo de Software",
+    carrera: "Ingenieria en Software",
     password: "jefe123",
   },
   "profesor@utt.edu.mx": {
-    id: "4",
-    nombre: "Ing. Ana Martínez Ruiz",
-    email: "profesor@utt.edu.mx",
+    id: "3",
+    nombre: "Ing. Ana Sofia Torres Vega",
+    email: "profesor@upq.mx",
     rol: "profesor",
-    carrera: "ISC",
+    carrera: "Ingenieria en Software",
     password: "prof123",
   },
 }
@@ -71,7 +95,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Verificar si hay una sesión guardada
     const savedUser = localStorage.getItem("sigep_user")
     if (savedUser) {
       try {
@@ -83,22 +106,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
+  useEffect(() => {
+    if (user) {
+      document.documentElement.dataset.roleTheme = user.rol
+    } else {
+      document.documentElement.dataset.roleTheme = "guest"
+    }
+  }, [user])
+
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
-    
-    // Simular delay de red
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    
-    const demoUser = demoUsers[email.toLowerCase()]
-    
+    await new Promise((resolve) => setTimeout(resolve, 650))
+
+    const demoUser = demoUsers[email.toLowerCase().trim()]
+
     if (demoUser && demoUser.password === password) {
-      const { password: _, ...userWithoutPassword } = demoUser
+      const { password: _password, ...userWithoutPassword } = demoUser
       setUser(userWithoutPassword)
       localStorage.setItem("sigep_user", JSON.stringify(userWithoutPassword))
       setIsLoading(false)
       return true
     }
-    
+
     setIsLoading(false)
     return false
   }
@@ -138,22 +167,20 @@ export function useAuth() {
   return context
 }
 
-// Función para obtener el nombre del rol en español
 export function getRoleName(rol: UserRole): string {
   const roles: Record<UserRole, string> = {
-    coordinadora_pi: "Coordinadora de PI",
-    jefe_asignatura: "Jefe de Asignatura",
-    profesor: "Profesor Evaluador",
+    coordinadora_pi: "Coordinadora PI",
+    jefe_asignatura: "Jefe de asignatura",
+    profesor: "Profesor evaluador",
   }
   return roles[rol]
 }
 
-// Función para obtener el color del badge según el rol
 export function getRoleColor(rol: UserRole): string {
   const colors: Record<UserRole, string> = {
-    coordinadora_pi: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-    jefe_asignatura: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    profesor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    coordinadora_pi: "border-teal-200 bg-teal-50 text-teal-700",
+    jefe_asignatura: "border-blue-200 bg-blue-50 text-blue-700",
+    profesor: "border-amber-200 bg-amber-50 text-amber-700",
   }
   return colors[rol]
 }
