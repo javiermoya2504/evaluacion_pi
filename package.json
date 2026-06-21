@@ -4,8 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.11.0",
   "scripts": {
-    "dev": "next dev",
-    "build": "eslint . && next build",
+    "dev": "next dev --webpack",
+    "build": "eslint . && next build --webpack",
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

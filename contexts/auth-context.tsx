@@ -39,12 +39,37 @@ const AUTH_STORAGE_KEY = "sigep_user"
 const AUTH_STORAGE_EVENT = "sigep-auth-change"
 
 const demoUsers: Record<string, User & { password: string }> = {
+  "coordinadora@upq.mx": {
+    id: "1",
+    nombre: "Dra. Laura Mendoza Rivera",
+    email: "coordinadora@upq.mx",
+    rol: "coordinadora_pi",
+    carrera: "Ingenieria en Software",
+    password: "admin123",
+  },
+  "jefe@upq.mx": {
+    id: "2",
+    nombre: "Mtro. Daniel Hernandez Soto",
+    email: "jefe@upq.mx",
+    rol: "jefe_asignatura",
+    asignatura: "Desarrollo de Software",
+    carrera: "Ingenieria en Software",
+    password: "jefe123",
+  },
+  "profesor@upq.mx": {
+    id: "3",
+    nombre: "Ing. Ana Sofia Torres Vega",
+    email: "profesor@upq.mx",
+    rol: "profesor",
+    carrera: "Ingenieria en Software",
+    password: "prof123",
+  },
   "coordinadora@utt.edu.mx": {
     id: "1",
     nombre: "Dra. Maria Gonzalez Hernandez",
     email: "coordinadora@utt.edu.mx",
     rol: "coordinadora_pi",
-    carrera: "ISC / ITI",
+    carrera: "Ingenieria en Software",
     password: "admin123",
   },
   "jefe.programacion@utt.edu.mx": {
@@ -61,8 +86,8 @@ const demoUsers: Record<string, User & { password: string }> = {
     nombre: "Mtro. Roberto Sanchez Perez",
     email: "jefe.bd@utt.edu.mx",
     rol: "jefe_asignatura",
-    asignatura: "Base de Datos",
-    carrera: "ISC",
+    asignatura: "Desarrollo de Software",
+    carrera: "Ingenieria en Software",
     password: "jefe123",
   },
   "profesor@utt.edu.mx": {
@@ -70,7 +95,7 @@ const demoUsers: Record<string, User & { password: string }> = {
     nombre: "Ing. Ana Martinez Ruiz",
     email: "profesor@utt.edu.mx",
     rol: "profesor",
-    carrera: "ISC",
+    carrera: "Ingenieria en Software",
     password: "prof123",
   },
 }
@@ -102,6 +127,14 @@ function AuthStateProvider({ children }: { children: ReactNode }) {
       clearStoredUser()
     }
   }, [googleUser])
+
+  useEffect(() => {
+    if (user) {
+      document.documentElement.dataset.roleTheme = user.rol
+    } else {
+      document.documentElement.dataset.roleTheme = "guest"
+    }
+  }, [user])
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsAuthenticating(true)
@@ -240,18 +273,18 @@ export function useAuth() {
 
 export function getRoleName(rol: UserRole): string {
   const roles: Record<UserRole, string> = {
-    coordinadora_pi: "Coordinadora de PI",
-    jefe_asignatura: "Jefe de Asignatura",
-    profesor: "Profesor Evaluador",
+    coordinadora_pi: "Coordinadora PI",
+    jefe_asignatura: "Jefe de asignatura",
+    profesor: "Profesor evaluador",
   }
   return roles[rol]
 }
 
 export function getRoleColor(rol: UserRole): string {
   const colors: Record<UserRole, string> = {
-    coordinadora_pi: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-    jefe_asignatura: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    profesor: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    coordinadora_pi: "border-teal-200 bg-teal-50 text-teal-700",
+    jefe_asignatura: "border-blue-200 bg-blue-50 text-blue-700",
+    profesor: "border-amber-200 bg-amber-50 text-amber-700",
   }
   return colors[rol]
 }
