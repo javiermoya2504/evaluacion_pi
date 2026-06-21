@@ -27,8 +27,8 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  Search, 
+import {
+  Search,
   Filter,
   FileCheck,
   Clock,
@@ -238,7 +238,7 @@ function ProfesorEvaluacionPage() {
   })
 
   const toggleCategory = (id: number) => {
-    setExpandedCategories(prev => 
+    setExpandedCategories(prev =>
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     )
   }
@@ -288,11 +288,11 @@ function ProfesorEvaluacionPage() {
 
   return (
     <div className="flex flex-col">
-      <DashboardHeader 
-        title="Evaluación Final del PI" 
+      <DashboardHeader
+        title="Evaluación Final del PI"
         description="Evalúa los proyectos integradores con la rúbrica global"
       />
-      
+
       <div className="flex-1 space-y-6 p-6">
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-3">
@@ -348,17 +348,15 @@ function ProfesorEvaluacionPage() {
               const config = estadoConfig[equipo.estado as keyof typeof estadoConfig]
               const StatusIcon = config.icon
               return (
-                <div 
-                  key={equipo.id} 
+                <div
+                  key={equipo.id}
                   className="flex items-center justify-between rounded-lg border p-4"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${
-                      equipo.estado === "evaluado" ? "bg-emerald-500/10" : "bg-primary/10"
-                    }`}>
-                      <Users className={`h-6 w-6 ${
-                        equipo.estado === "evaluado" ? "text-emerald-500" : "text-primary"
-                      }`} />
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${equipo.estado === "evaluado" ? "bg-emerald-500/10" : "bg-primary/10"
+                      }`}>
+                      <Users className={`h-6 w-6 ${equipo.estado === "evaluado" ? "text-emerald-500" : "text-primary"
+                        }`} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -375,7 +373,7 @@ function ProfesorEvaluacionPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     {equipo.estado === "evaluado" && equipo.calificacion && (
                       <div className="text-right">
@@ -386,7 +384,7 @@ function ProfesorEvaluacionPage() {
                         <span className="text-xs text-muted-foreground">Calificación</span>
                       </div>
                     )}
-                    <Button 
+                    <Button
                       onClick={() => openEvaluation(equipo)}
                       variant={equipo.estado === "evaluado" ? "outline" : "default"}
                     >
@@ -473,7 +471,7 @@ function ProfesorEvaluacionPage() {
                   const { total, max } = calcularTotalCategoria(categoria)
                   return (
                     <Card key={categoria.id}>
-                      <CardHeader 
+                      <CardHeader
                         className="cursor-pointer"
                         onClick={() => toggleCategory(categoria.id)}
                       >
@@ -497,7 +495,7 @@ function ProfesorEvaluacionPage() {
                           </div>
                         </div>
                       </CardHeader>
-                      
+
                       {isExpanded && (
                         <CardContent className="space-y-6 pt-0">
                           {categoria.criterios.map((criterio) => (
@@ -517,7 +515,7 @@ function ProfesorEvaluacionPage() {
                                   <span className="text-muted-foreground">/{criterio.puntajeMax}</span>
                                 </div>
                               </div>
-                              
+
                               <div>
                                 <Label className="text-xs text-muted-foreground">Puntaje</Label>
                                 <Slider
@@ -528,7 +526,7 @@ function ProfesorEvaluacionPage() {
                                   className="mt-2"
                                 />
                               </div>
-                              
+
                               <div>
                                 <Label className="text-xs text-muted-foreground">Observaciones</Label>
                                 <Textarea
@@ -659,11 +657,11 @@ function CoordinadoraEvaluacionPage() {
 
   return (
     <div className="flex flex-col">
-      <DashboardHeader 
-        title="Evaluaciones" 
+      <DashboardHeader
+        title="Evaluaciones"
         description="Supervisa todas las evaluaciones de proyectos integradores"
       />
-      
+
       <div className="flex-1 space-y-6 p-6">
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">

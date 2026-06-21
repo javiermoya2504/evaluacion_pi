@@ -9,7 +9,11 @@ __v0_jsx-dev-runtime.ts
 # Environment variables
 .env*.local
 
+# Local user store
+data/
+
 # Common ignores
 node_modules
 .next/
+tsconfig.tsbuildinfo
 .DS_Store

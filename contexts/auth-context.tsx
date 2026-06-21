@@ -1,110 +1,32 @@
-"use client"
-
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
-
-export type UserRole = "coordinadora_pi" | "jefe_asignatura" | "profesor"
-
-export interface User {
-  id: string
-  nombre: string
-  email: string
-  rol: UserRole
-  carrera?: string
-  asignatura?: string
-  avatar?: string
-}
-
-interface AuthContextType {
-  user: User | null
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<boolean>
-  logout: () => void
-  isCoordinadora: boolean
-  isJefeAsignatura: boolean
-  isProfesor: boolean
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-const demoUsers: Record<string, User & { password: string }> = {
-  "coordinadora@upq.mx": {
-    id: "1",
-    nombre: "Dra. Laura Mendoza Rivera",
-    email: "coordinadora@upq.mx",
-    rol: "coordinadora_pi",
-    carrera: "Ingenieria en Software",
-    password: "admin123",
-  },
-  "jefe@upq.mx": {
-    id: "2",
-    nombre: "Mtro. Daniel Hernandez Soto",
-    email: "jefe@upq.mx",
-    rol: "jefe_asignatura",
-    asignatura: "Desarrollo de Software",
-    carrera: "Ingenieria en Software",
-    password: "jefe123",
-  },
-  "profesor@upq.mx": {
-    id: "3",
-    nombre: "Ing. Ana Sofia Torres Vega",
-    email: "profesor@upq.mx",
-    rol: "profesor",
-    carrera: "Ingenieria en Software",
-    password: "prof123",
-  },
-  "coordinadora@utt.edu.mx": {
-    id: "1",
-    nombre: "Dra. Laura Mendoza Rivera",
-    email: "coordinadora@upq.mx",
-    rol: "coordinadora_pi",
-    carrera: "Ingenieria en Software",
-    password: "admin123",
-  },
-  "jefe.programacion@utt.edu.mx": {
-    id: "2",
-    nombre: "Mtro. Daniel Hernandez Soto",
-    email: "jefe@upq.mx",
-    rol: "jefe_asignatura",
-    asignatura: "Desarrollo de Software",
-    carrera: "Ingenieria en Software",
-    password: "jefe123",
-  },
-  "jefe@utt.edu.mx": {
-    id: "2",
-    nombre: "Mtro. Daniel Hernandez Soto",
-    email: "jefe@upq.mx",
-    rol: "jefe_asignatura",
-    asignatura: "Desarrollo de Software",
-    carrera: "Ingenieria en Software",
-    password: "jefe123",
-  },
-  "profesor@utt.edu.mx": {
-    id: "3",
-    nombre: "Ing. Ana Sofia Torres Vega",
-    email: "profesor@upq.mx",
-    rol: "profesor",
-    carrera: "Ingenieria en Software",
-    password: "prof123",
-  },
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  return (
+    <SessionProvider>
+      <AuthStateProvider>{children}</AuthStateProvider>
+    </SessionProvider>
+  )
+}
+
+function AuthStateProvider({ children }: { children: ReactNode }) {
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const { data: session, status } = useSession()
   const router = useRouter()
+  const storedUserValue = useSyncExternalStore(
+    subscribeToStoredUser,
+    getStoredUserValue,
+    () => null,
+  )
+  const storedUser = useMemo(() => parseStoredUser(storedUserValue), [storedUserValue])
+  const googleUser = useMemo(() => getGoogleUser(session?.user), [session?.user])
+  const user = googleUser ?? storedUser
+  const isLoading = status === "loading" || isAuthenticating
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("sigep_user")
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser))
-      } catch {
-        localStorage.removeItem("sigep_user")
-      }
+    if (googleUser) {
+      clearStoredUser()
     }
-    setIsLoading(false)
-  }, [])
+  }, [googleUser])
 
   useEffect(() => {
     if (user) {
@@ -115,26 +37,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 650))
+    setIsAuthenticating(true)
 
-    const demoUser = demoUsers[email.toLowerCase().trim()]
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
+    const demoUser = demoUsers[email.toLowerCase()]
 
     if (demoUser && demoUser.password === password) {
-      const { password: _password, ...userWithoutPassword } = demoUser
-      setUser(userWithoutPassword)
-      localStorage.setItem("sigep_user", JSON.stringify(userWithoutPassword))
-      setIsLoading(false)
+      const userWithoutPassword = removePassword(demoUser)
+      setStoredUser(userWithoutPassword)
+      setIsAuthenticating(false)
       return true
     }
 
-    setIsLoading(false)
+    setIsAuthenticating(false)
     return false
   }
 
   const logout = () => {
-    setUser(null)
-    localStorage.removeItem("sigep_user")
+    clearStoredUser()
+
+    if (status === "authenticated") {
+      signOut({ callbackUrl: "/login" })
+      return
+    }
+
     router.push("/login")
   }
 
@@ -157,6 +84,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
+}
+
+function getGoogleUser(sessionUser: unknown): User | null {
+  if (!sessionUser || typeof sessionUser !== "object") {
+    return null
+  }
+
+  const userData = sessionUser as {
+    name?: string | null
+    email?: string | null
+    image?: string | null
+  }
+
+  if (!userData.email) {
+    return null
+  }
+
+  const email = userData.email.toLowerCase()
+  const demoUser = demoUsers[email]
+
+  if (demoUser) {
+    const userWithoutPassword = removePassword(demoUser)
+    return {
+      ...userWithoutPassword,
+      nombre: userData.name || userWithoutPassword.nombre,
+      avatar: userData.image || userWithoutPassword.avatar,
+    }
+  }
+
+  return {
+    id: email,
+    nombre: userData.name || email,
+    email,
+    rol: "profesor",
+    carrera: "ISC",
+    avatar: userData.image || undefined,
+  }
+}
+
+function subscribeToStoredUser(onChange: () => void) {
+  window.addEventListener("storage", onChange)
+  window.addEventListener(AUTH_STORAGE_EVENT, onChange)
+  return () => {
+    window.removeEventListener("storage", onChange)
+    window.removeEventListener(AUTH_STORAGE_EVENT, onChange)
+  }
+}
+
+function getStoredUserValue() {
+  return localStorage.getItem(AUTH_STORAGE_KEY)
+}
+
+function parseStoredUser(value: string | null): User | null {
+  if (!value) return null
+
+  try {
+    return JSON.parse(value) as User
+  } catch {
+    return null
+  }
+}
+
+function setStoredUser(user: User) {
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
+  window.dispatchEvent(new Event(AUTH_STORAGE_EVENT))
+}
+
+function clearStoredUser() {
+  if (!localStorage.getItem(AUTH_STORAGE_KEY)) return
+  localStorage.removeItem(AUTH_STORAGE_KEY)
+  window.dispatchEvent(new Event(AUTH_STORAGE_EVENT))
+}
+
+function removePassword(user: User & { password: string }): User {
+  const { password, ...userWithoutPassword } = user
+  void password
+  return userWithoutPassword
 }
 
 export function useAuth() {
