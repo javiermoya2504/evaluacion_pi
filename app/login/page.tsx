@@ -1,3 +1,203 @@
+"use client"
+
+import { useMemo, useState, type CSSProperties } from "react"
+import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
+import { useAuth, type UserRole } from "@/contexts/auth-context"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  AlertCircle,
+  ArrowRight,
+  BarChart3,
+  BookCheck,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  KeyRound,
+  Layers3,
+  Loader2,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react"
+
+type AccessProfile = {
+  role: UserRole
+  title: string
+  subtitle: string
+  email: string
+  password: string
+  accent: string
+  theme: {
+    primary: string
+    primaryDark: string
+    soft: string
+    border: string
+    text: string
+    panel: string
+    glow: string
+  }
+  icon: typeof ShieldCheck
+  permissions: string[]
+}
+
+const accessProfiles: AccessProfile[] = [
+  {
+    role: "coordinadora_pi",
+    title: "Coordinadora PI",
+    subtitle: "Control general del proceso",
+    email: "coordinadora@upq.mx",
+    password: "admin123",
+    accent: "from-teal-500 to-cyan-500",
+    theme: {
+      primary: "#0b8f87",
+      primaryDark: "#0b2f2f",
+      soft: "#ecfdf7",
+      border: "#5eead4",
+      text: "#0f766e",
+      panel: "#0b2f2f",
+      glow: "rgba(45, 212, 191, 0.24)",
+    },
+    icon: ShieldCheck,
+    permissions: ["Seguimiento global", "Reportes ejecutivos", "Gestion de equipos"],
+  },
+  {
+    role: "jefe_asignatura",
+    title: "Jefe de asignatura",
+    subtitle: "Rubricas y criterios por materia",
+    email: "jefe@upq.mx",
+    password: "jefe123",
+    accent: "from-blue-500 to-indigo-500",
+    theme: {
+      primary: "#3b63ff",
+      primaryDark: "#18235f",
+      soft: "#eef3ff",
+      border: "#93c5fd",
+      text: "#3150c8",
+      panel: "#111a4f",
+      glow: "rgba(59, 99, 255, 0.24)",
+    },
+    icon: Layers3,
+    permissions: ["Diseno de rubricas", "Revision de proyectos", "Avance por parcial"],
+  },
+  {
+    role: "profesor",
+    title: "Profesor evaluador",
+    subtitle: "Evaluacion de proyectos asignados",
+    email: "profesor@upq.mx",
+    password: "prof123",
+    accent: "from-amber-500 to-orange-500",
+    theme: {
+      primary: "#f97316",
+      primaryDark: "#7c2d12",
+      soft: "#fff7ed",
+      border: "#fdba74",
+      text: "#c2410c",
+      panel: "#431407",
+      glow: "rgba(249, 115, 22, 0.24)",
+    },
+    icon: BookCheck,
+    permissions: ["Evaluaciones pendientes", "Calificacion por rubrica", "Retroalimentacion"],
+  },
+]
+
+export default function LoginPage() {
+  const [selectedRole, setSelectedRole] = useState<UserRole>("coordinadora_pi")
+  const [email, setEmail] = useState("coordinadora@upq.mx")
+  const [password, setPassword] = useState("admin123")
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { login } = useAuth()
+  const router = useRouter()
+
+  const selectedProfile = useMemo(
+    () => accessProfiles.find((profile) => profile.role === selectedRole) ?? accessProfiles[0],
+    [selectedRole]
+  )
+
+  const handleProfileSelect = (profile: AccessProfile) => {
+    setSelectedRole(profile.role)
+    setEmail(profile.email)
+    setPassword(profile.password)
+    setShowPassword(false)
+    setError("")
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setIsSubmitting(true)
+
+    const success = await login(email, password)
+
+    if (success) {
+      router.push("/dashboard")
+    } else {
+      setError("No pudimos validar el acceso. Revisa el correo institucional y la contrasena.")
+    }
+
+    setIsSubmitting(false)
+  }
+
+  const handleGoogleLogin = () => {
+    setError("")
+    signIn("google", { callbackUrl: "/dashboard" }, { prompt: "select_account" })
+  }
+
+  return (
+    <main
+      className="min-h-screen bg-[#f5f7f4] text-slate-950 transition-colors duration-300"
+      style={{
+        "--role-primary": selectedProfile.theme.primary,
+        "--role-primary-dark": selectedProfile.theme.primaryDark,
+        "--role-soft": selectedProfile.theme.soft,
+        "--role-border": selectedProfile.theme.border,
+        "--role-text": selectedProfile.theme.text,
+        "--role-panel": selectedProfile.theme.panel,
+        "--role-glow": selectedProfile.theme.glow,
+      } as CSSProperties}
+    >
+      <div className="grid min-h-screen lg:grid-cols-[1.08fr_0.92fr]">
+        <section className="relative hidden overflow-hidden bg-[var(--role-panel)] px-12 py-10 text-white transition-colors duration-300 lg:flex lg:flex-col lg:justify-between">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,var(--role-glow),transparent_30%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_45%)]" />
+          <div className="relative z-10 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-[var(--role-primary-dark)] shadow-lg">
+              <GraduationCap className="h-7 w-7" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white">UPQ</p>
+              <p className="text-sm text-teal-50/80">Universidad Politecnica de Queretaro</p>
+            </div>
+          </div>
+
+          <div className="relative z-10 max-w-2xl space-y-8">
+            <Badge className="border-white/15 bg-white/10 px-3 py-1 text-white hover:bg-white/10">
+              <Sparkles className="mr-2 h-3.5 w-3.5" />
+              {selectedProfile.title}
+            </Badge>
+            <div className="space-y-5">
+              <h1 className="max-w-xl text-5xl font-semibold leading-tight tracking-tight">
+                Evaluacion inteligente de proyectos integradores.
+              </h1>
+              <p className="max-w-lg text-base leading-7 text-teal-50/78">
+                Centraliza rubricas, equipos, evidencias y resultados para que cada rol trabaje
+                solo con la informacion que necesita.
+              </p>
+            </div>
+
+            <div className="grid max-w-xl grid-cols-3 gap-3">
+              {[
+                ["24", "Proyectos activos"],
+                ["8", "Rubricas vigentes"],
+                ["91%", "Avance evaluado"],
               ].map(([value, label]) => (
                 <div key={label} className="rounded-xl border border-white/12 bg-white/10 p-4 backdrop-blur">
                   <p className="text-2xl font-semibold">{value}</p>

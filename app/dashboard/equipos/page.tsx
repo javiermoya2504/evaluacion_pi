@@ -15,6 +15,7 @@ import {
   BookOpenCheck,
   CheckCircle2,
   Eye,
+  type LucideIcon,
   Plus,
   Search,
   Users,
@@ -71,6 +72,13 @@ const statusConfig = {
   validado: { label: "Validado", className: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
 }
 
+type SummaryMetric = {
+  label: string
+  value: number
+  icon: LucideIcon
+  tone: string
+}
+
 export default function EquiposPage() {
   const { user } = useAuth()
   const [query, setQuery] = useState("")
@@ -117,19 +125,19 @@ export default function EquiposPage() {
 
       <div className="flex-1 space-y-6 p-6">
         <section className="grid gap-4 md:grid-cols-4">
-          {[
-            ["Equipos", teams.length, Users, "bg-teal-50 text-teal-700"],
-            ["En seguimiento", teams.filter((team) => team.estado === "riesgo").length, AlertTriangle, "bg-amber-50 text-amber-700"],
-            ["Validados", teams.filter((team) => team.estado === "validado").length, CheckCircle2, "bg-emerald-50 text-emerald-700"],
-            ["Promedio general", Math.round(teams.reduce((sum, team) => sum + team.promedio, 0) / teams.length), BookOpenCheck, "bg-blue-50 text-blue-700"],
-          ].map(([label, value, Icon, tone]) => (
-            <Card key={label as string} className="border-none bg-white shadow-sm shadow-slate-200/70">
+          {([
+            { label: "Equipos", value: teams.length, icon: Users, tone: "bg-teal-50 text-teal-700" },
+            { label: "En seguimiento", value: teams.filter((team) => team.estado === "riesgo").length, icon: AlertTriangle, tone: "bg-amber-50 text-amber-700" },
+            { label: "Validados", value: teams.filter((team) => team.estado === "validado").length, icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700" },
+            { label: "Promedio general", value: Math.round(teams.reduce((sum, team) => sum + team.promedio, 0) / teams.length), icon: BookOpenCheck, tone: "bg-blue-50 text-blue-700" },
+          ] satisfies SummaryMetric[]).map(({ label, value, icon: Icon, tone }) => (
+            <Card key={label} className="border-none bg-white shadow-sm shadow-slate-200/70">
               <CardContent className="flex items-start justify-between p-5">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">{label as string}</p>
-                  <p className="mt-3 text-3xl font-semibold text-slate-950">{value as number}</p>
+                  <p className="text-sm font-medium text-slate-500">{label}</p>
+                  <p className="mt-3 text-3xl font-semibold text-slate-950">{value}</p>
                 </div>
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone as string}`}>
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}>
                   <Icon className="h-5 w-5" />
                 </div>
               </CardContent>
