@@ -5,11 +5,18 @@
 - [Estrategia de ramas](docs/branching-strategy.md)
 - [Variables de entorno](docs/environment-variables.md)
 - [Cierre DevOps del Sprint 3](docs/sprint-3-devops.md)
+- [Sprint 4 - Buffer](docs/sprint-4-buffer.md)
+- [Sprint 5 - Backups PostgreSQL](docs/sprint-5-backups.md)
+- [Railway staging](docs/railway-staging.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
   test suite y build en cada pull request y en los pushes a `feature`, `dev` y
   `main`.
 - Preview automatico de Vercel para cada pull request mediante la integracion
   nativa del repositorio con Vercel.
+- Configuracion Railway en `railway.json` para los ambientes `dev`, `staging`
+  y `pr`.
+- Backups PostgreSQL con `pg_dump`, subida a Google Drive con `rclone`, cron
+  semanal y script de restore documentados para Sprint 5.
 - Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
 - Orquestacion local en `compose.yaml`.
 
@@ -29,6 +36,10 @@ docker compose down
 El servicio `frontend` queda disponible en `http://localhost:3000` y el
 servicio `backend` en `http://localhost:3001`. Ambos reutilizan `.env.local`
 cuando el archivo existe.
+
+Para trabajar con ambientes separados, usar `.env.development.example` como
+referencia local/dev y `.env.staging.example` como referencia para Railway
+staging. Los secretos reales se cargan en el proveedor del ambiente.
 
 En GitHub Actions, el secreto del repositorio `JWT_SECRET` se inyecta como
 `NEXTAUTH_SECRET` durante el build. CI falla de forma explicita en ramas del

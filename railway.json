@@ -1,0 +1,46 @@
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile.frontend",
+    "watchPatterns": [
+      "app/**",
+      "components/**",
+      "contexts/**",
+      "hooks/**",
+      "lib/**",
+      "public/**",
+      "styles/**",
+      "Dockerfile.frontend",
+      "next.config.mjs",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "tsconfig.json"
+    ]
+  },
+  "deploy": {
+    "healthcheckPath": "/login",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "dev": {
+      "deploy": {
+        "healthcheckPath": "/login"
+      }
+    },
+    "staging": {
+      "deploy": {
+        "healthcheckPath": "/login",
+        "restartPolicyMaxRetries": 5
+      }
+    },
+    "pr": {
+      "deploy": {
+        "healthcheckPath": "/login",
+        "restartPolicyMaxRetries": 2
+      }
+    }
+  }
+}
