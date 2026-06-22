@@ -12,13 +12,20 @@ __v0_jsx-dev-runtime.ts
 !.env.example
 !.env.development.example
 !.env.staging.example
+!.env.backup.example
 .env*.local
+
+# Database backups
+backups/
+*.dump
+*.dump.gz
 
 # Local user store
 data/
 
 # Common ignores
 node_modules
+.pnpm-store/
 .next/
 tsconfig.tsbuildinfo
 .DS_Store

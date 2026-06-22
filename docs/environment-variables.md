@@ -7,6 +7,8 @@ Para Sprint 4 se agregaron ejemplos separados por ambiente:
 
 - `.env.development.example`: desarrollo local/dev.
 - `.env.staging.example`: staging en Railway.
+- `.env.backup.example`: backup PostgreSQL y subida a Google Drive con
+  `rclone`.
 
 ## Aplicacion
 
@@ -33,6 +35,22 @@ El secreto se configura en **Settings > Secrets and variables > Actions** del
 repositorio. No debe agregarse a `.env.example` porque pertenece a CI y su valor
 debe permanecer secreto.
 
+## Backups PostgreSQL
+
+| Variable | Obligatoria | Alcance | Descripcion |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | Si, salvo que se usen variables `PG*` | Servidor de backup | URL de conexion leida por `pg_dump` y `pg_restore`. |
+| `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | Alternativa | Servidor de backup | Variables nativas de PostgreSQL si no se define `DATABASE_URL`. |
+| `RCLONE_REMOTE` | Si | Servidor de backup | Nombre del remote de `rclone` configurado contra Google Drive. |
+| `RCLONE_BACKUP_PATH` | Si | Servidor de backup | Carpeta destino dentro del remote de Google Drive. |
+| `BACKUP_DIR` | No | Servidor de backup | Ruta local temporal para guardar dumps antes de subirlos. |
+| `BACKUP_PREFIX` | No | Servidor de backup | Prefijo del archivo generado. |
+| `BACKUP_RETENTION_DAYS` | No | Servidor de backup | Dias de retencion de backups locales. |
+| `RESTORE_DATABASE_URL` | Si para restore | Servidor de prueba | Base destino para probar restauraciones. No debe apuntar a produccion. |
+
+Estas variables deben vivir fuera del repositorio, por ejemplo en
+`/etc/evaluacion-pi/backup.env`, y cargarse con `BACKUP_ENV_FILE`.
+
 ## Railway
 
 Railway debe tener ambientes separados para `dev` y `staging`. Cada ambiente
@@ -47,6 +65,7 @@ Ver tambien:
 
 - [Railway staging](railway-staging.md)
 - [Sprint 4 - Buffer](sprint-4-buffer.md)
+- [Sprint 5 - Backups PostgreSQL](sprint-5-backups.md)
 
 ## Vercel
 
