@@ -20,8 +20,12 @@ backups/
 *.dump
 *.dump.gz
 
+# Local user store
+data/
+
 # Common ignores
 node_modules
+.pnpm-store/
 .next/
 tsconfig.tsbuildinfo
 .DS_Store
