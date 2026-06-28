@@ -7,6 +7,7 @@
 - [Cierre DevOps del Sprint 3](docs/sprint-3-devops.md)
 - [Sprint 4 - Buffer](docs/sprint-4-buffer.md)
 - [Sprint 5 - Backups PostgreSQL](docs/sprint-5-backups.md)
+- [Sprint 6 - Seguridad API y headers](docs/sprint-6-security.md)
 - [Railway staging](docs/railway-staging.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
   test suite y build en cada pull request y en los pushes a `feature`, `dev` y
@@ -17,6 +18,8 @@
   y `pr`.
 - Backups PostgreSQL con `pg_dump`, subida a Google Drive con `rclone`, cron
   semanal y script de restore documentados para Sprint 5.
+- Headers de seguridad, rate limiting en `/api/*` y checklist OWASP basico
+  documentados para Sprint 6.
 - Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
 - Orquestacion local en `compose.yaml`.
 
