@@ -4,16 +4,28 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import type { AuthUser, JwtPayload, Role } from "@/lib/types/auth"
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || ""
 const JWT_EXPIRES_IN: SignOptions["expiresIn"] =
   (process.env.JWT_EXPIRES_IN as SignOptions["expiresIn"]) || "7d"
 const BCRYPT_ROUNDS = 12
+const DEVELOPMENT_JWT_SECRET = "development-only-auth-secret"
+
+export function getConfiguredJwtSecret(): string {
+  const configuredSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET
+
+  if (configuredSecret) {
+    return configuredSecret
+  }
+
+  return process.env.NODE_ENV !== "production" ? DEVELOPMENT_JWT_SECRET : ""
+}
 
 export function getJwtSecret(): string {
-  if (!JWT_SECRET) {
+  const jwtSecret = getConfiguredJwtSecret()
+
+  if (!jwtSecret) {
     throw new Error("JWT_SECRET no está configurado")
   }
-  return JWT_SECRET
+  return jwtSecret
 }
 
 export async function hashPassword(password: string): Promise<string> {
