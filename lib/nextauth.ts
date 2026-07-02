@@ -1,7 +1,9 @@
 import type { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import { getConfiguredJwtSecret } from "@/lib/auth"
 
 export const authOptions: NextAuthOptions = {
+  secret: getConfiguredJwtSecret() || undefined,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || "",
