@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth } from "@/contexts/auth-context"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -89,7 +90,29 @@ const reportesPendientes = [
 ]
 
 export default function ReportesPage() {
+  const { user } = useAuth()
   const [periodo, setPeriodo] = useState("2024-1")
+
+  if (user?.rol !== "coordinadora_pi") {
+    return (
+      <div className="flex flex-col">
+        <DashboardHeader
+          title="Acceso restringido"
+          description="Tu rol no tiene permisos para consultar reportes globales"
+        />
+        <div className="p-6">
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="p-6">
+              <p className="font-semibold text-amber-950">Modulo reservado para Coordinadora PI.</p>
+              <p className="mt-2 text-sm text-amber-800">
+                Los reportes globales concentran informacion institucional del proceso PI.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col">

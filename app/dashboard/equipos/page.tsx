@@ -1,364 +1,255 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { useAuth } from "@/contexts/auth-context"
 import { DashboardHeader } from "@/components/dashboard-header"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Eye, 
+  AlertTriangle,
+  BookOpenCheck,
+  CheckCircle2,
+  Eye,
+  type LucideIcon,
+  Plus,
+  Search,
   Users,
-  Mail,
-  Phone,
-  User,
-  BookOpen
 } from "lucide-react"
 
-const equiposData = [
+const teams = [
   {
     id: 1,
-    nombre: "Equipo Alpha",
-    proyecto: "Sistema IoT para Agricultura",
-    carrera: "ISC",
+    nombre: "Equipo Aurum",
+    proyecto: "Sistema de gestion de laboratorios UPQ",
+    carrera: "Ingenieria en Software",
     semestre: "7mo",
-    lider: { nombre: "Carlos Méndez", email: "carlos@universidad.edu", matricula: "20190001" },
-    integrantes: [
-      { nombre: "María López", email: "maria@universidad.edu", matricula: "20190002" },
-      { nombre: "Juan Pérez", email: "juan@universidad.edu", matricula: "20190003" },
-      { nombre: "Ana García", email: "ana@universidad.edu", matricula: "20190004" },
-    ],
+    lider: "Carlos Mendez",
+    correo: "carlos.mendez@upq.edu.mx",
+    integrantes: ["Maria Lopez", "Juan Perez", "Ana Garcia", "Pedro Sanchez"],
+    materias: ["Desarrollo de Software", "Base de Datos", "Interfaces Web"],
+    evidencias: 82,
     estado: "activo",
-    evaluaciones: 3,
-    promedioActual: 87.5,
+    promedio: 89,
   },
   {
     id: 2,
-    nombre: "Equipo Beta",
-    proyecto: "App de Gestión Escolar",
-    carrera: "ITI",
+    nombre: "Equipo Nexus",
+    proyecto: "App de seguimiento academico",
+    carrera: "Ingenieria en Software",
     semestre: "6to",
-    lider: { nombre: "Laura Martínez", email: "laura@universidad.edu", matricula: "20200001" },
-    integrantes: [
-      { nombre: "Pedro Sánchez", email: "pedro@universidad.edu", matricula: "20200002" },
-      { nombre: "Rosa Díaz", email: "rosa@universidad.edu", matricula: "20200003" },
-    ],
-    estado: "activo",
-    evaluaciones: 2,
-    promedioActual: 92.0,
+    lider: "Laura Ramirez",
+    correo: "laura.ramirez@upq.edu.mx",
+    integrantes: ["Diego Torres", "Sofia Hernandez", "Miguel Flores"],
+    materias: ["Proyecto Integrador", "Calidad de Software"],
+    evidencias: 64,
+    estado: "riesgo",
+    promedio: 78,
   },
   {
     id: 3,
-    nombre: "Equipo Gamma",
-    proyecto: "Plataforma E-learning",
-    carrera: "ISC",
+    nombre: "Equipo Innova",
+    proyecto: "Panel IoT para eficiencia energetica",
+    carrera: "Ingenieria en Tecnologias de Manufactura",
     semestre: "8vo",
-    lider: { nombre: "Roberto Hernández", email: "roberto@universidad.edu", matricula: "20180001" },
-    integrantes: [
-      { nombre: "Sofía Ruiz", email: "sofia@universidad.edu", matricula: "20180002" },
-      { nombre: "Diego Torres", email: "diego@universidad.edu", matricula: "20180003" },
-      { nombre: "Carmen Flores", email: "carmen@universidad.edu", matricula: "20180004" },
-      { nombre: "Luis Morales", email: "luis@universidad.edu", matricula: "20180005" },
-    ],
-    estado: "finalizado",
-    evaluaciones: 5,
-    promedioActual: 95.2,
-  },
-  {
-    id: 4,
-    nombre: "Equipo Delta",
-    proyecto: "Sistema de Inventarios",
-    carrera: "ITI",
-    semestre: "7mo",
-    lider: { nombre: "Andrea Vega", email: "andrea@universidad.edu", matricula: "20190005" },
-    integrantes: [
-      { nombre: "Miguel Castillo", email: "miguel@universidad.edu", matricula: "20190006" },
-      { nombre: "Patricia Luna", email: "patricia@universidad.edu", matricula: "20190007" },
-    ],
-    estado: "activo",
-    evaluaciones: 2,
-    promedioActual: 78.3,
+    lider: "Roberto Diaz",
+    correo: "roberto.diaz@upq.edu.mx",
+    integrantes: ["Carmen Ruiz", "Fernando Vega", "Patricia Luna", "Andres Castro"],
+    materias: ["Sistemas Embebidos", "Proyecto Integrador", "Analitica"],
+    evidencias: 96,
+    estado: "validado",
+    promedio: 94,
   },
 ]
 
-const estadoConfig = {
-  activo: { label: "Activo", className: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  pendiente: { label: "Pendiente", className: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-  finalizado: { label: "Finalizado", className: "bg-primary/10 text-primary border-primary/20" },
+const statusConfig = {
+  activo: { label: "Activo", className: "bg-blue-50 text-blue-700 border-blue-200", icon: BookOpenCheck },
+  riesgo: { label: "Requiere seguimiento", className: "bg-amber-50 text-amber-700 border-amber-200", icon: AlertTriangle },
+  validado: { label: "Validado", className: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
+}
+
+type SummaryMetric = {
+  label: string
+  value: number
+  icon: LucideIcon
+  tone: string
 }
 
 export default function EquiposPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterCarrera, setFilterCarrera] = useState("todas")
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [selectedEquipo, setSelectedEquipo] = useState<typeof equiposData[0] | null>(null)
+  const { user } = useAuth()
+  const [query, setQuery] = useState("")
+  const [status, setStatus] = useState("todos")
 
-  const filteredEquipos = equiposData.filter((equipo) => {
-    const matchesSearch = equipo.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      equipo.proyecto.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      equipo.lider.nombre.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCarrera = filterCarrera === "todas" || equipo.carrera === filterCarrera
-    return matchesSearch && matchesCarrera
-  })
+  const filteredTeams = useMemo(
+    () =>
+      teams.filter((team) => {
+        const text = `${team.nombre} ${team.proyecto} ${team.lider} ${team.carrera}`.toLowerCase()
+        const matchesQuery = text.includes(query.toLowerCase())
+        const matchesStatus = status === "todos" || team.estado === status
+        return matchesQuery && matchesStatus
+      }),
+    [query, status]
+  )
+
+  if (user?.rol !== "coordinadora_pi") {
+    return (
+      <div className="flex flex-col">
+        <DashboardHeader
+          title="Acceso restringido"
+          description="Tu rol no tiene permisos para administrar equipos"
+        />
+        <div className="p-6">
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="p-6">
+              <p className="font-semibold text-amber-950">Modulo reservado para Coordinadora PI.</p>
+              <p className="mt-2 text-sm text-amber-800">
+                La gestion de equipos, alumnos y asignaciones corresponde al rol de coordinacion.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col">
-      <DashboardHeader 
-        title="Gestión de Equipos" 
-        description="Administra los equipos de proyectos integradores"
+      <DashboardHeader
+        title="Equipos PI"
+        description="Panel coordinador PI: lista, estado y evidencias de equipos"
       />
-      
+
       <div className="flex-1 space-y-6 p-6">
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Equipos
-              </CardTitle>
-              <Users className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{equiposData.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Equipos Activos
-              </CardTitle>
-              <Users className="h-4 w-4 text-emerald-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {equiposData.filter(e => e.estado === "activo").length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Estudiantes
-              </CardTitle>
-              <User className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {equiposData.reduce((acc, e) => acc + e.integrantes.length + 1, 0)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Promedio General
-              </CardTitle>
-              <BookOpen className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {(equiposData.reduce((acc, e) => acc + e.promedioActual, 0) / equiposData.length).toFixed(1)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <section className="grid gap-4 md:grid-cols-4">
+          {([
+            { label: "Equipos", value: teams.length, icon: Users, tone: "bg-teal-50 text-teal-700" },
+            { label: "En seguimiento", value: teams.filter((team) => team.estado === "riesgo").length, icon: AlertTriangle, tone: "bg-amber-50 text-amber-700" },
+            { label: "Validados", value: teams.filter((team) => team.estado === "validado").length, icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700" },
+            { label: "Promedio general", value: Math.round(teams.reduce((sum, team) => sum + team.promedio, 0) / teams.length), icon: BookOpenCheck, tone: "bg-blue-50 text-blue-700" },
+          ] satisfies SummaryMetric[]).map(({ label, value, icon: Icon, tone }) => (
+            <Card key={label} className="border-none bg-white shadow-sm shadow-slate-200/70">
+              <CardContent className="flex items-start justify-between p-5">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">{label}</p>
+                  <p className="mt-3 text-3xl font-semibold text-slate-950">{value}</p>
+                </div>
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
 
-        {/* Actions Bar */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar equipos..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Select value={filterCarrera} onValueChange={setFilterCarrera}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Carrera" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                <SelectItem value="ISC">ISC</SelectItem>
-                <SelectItem value="ITI">ITI</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nuevo Equipo
+        <Card className="border-none bg-white shadow-sm shadow-slate-200/70">
+          <CardHeader>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <CardTitle>Lista de equipos registrados</CardTitle>
+                <CardDescription>Simula el entregable GET/POST/PUT de equipos mientras el backend queda listo</CardDescription>
+              </div>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Registrar equipo
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Registrar Nuevo Equipo</DialogTitle>
-                <DialogDescription>
-                  Ingresa la información del nuevo equipo de proyecto integrador
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label>Nombre del Equipo</Label>
-                  <Input placeholder="Ej: Equipo Epsilon" />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Nombre del Proyecto</Label>
-                  <Input placeholder="Ej: Sistema de Gestión..." />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Carrera</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ISC">ISC</SelectItem>
-                        <SelectItem value="ITI">ITI</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Semestre</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5to Semestre</SelectItem>
-                        <SelectItem value="6">6to Semestre</SelectItem>
-                        <SelectItem value="7">7mo Semestre</SelectItem>
-                        <SelectItem value="8">8vo Semestre</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label>Email del Líder</Label>
-                  <Input type="email" placeholder="lider@universidad.edu" />
-                </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-3 md:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className="pl-9"
+                  placeholder="Buscar por equipo, proyecto, lider o carrera"
+                />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={() => setIsCreateOpen(false)}>
-                  Registrar Equipo
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="w-full md:w-[220px]">
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los estados</SelectItem>
+                  <SelectItem value="activo">Activos</SelectItem>
+                  <SelectItem value="riesgo">Requieren seguimiento</SelectItem>
+                  <SelectItem value="validado">Validados</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Teams Grid */}
-        <div className="grid gap-4 md:grid-cols-2">
-          {filteredEquipos.map((equipo) => {
-            const config = estadoConfig[equipo.estado as keyof typeof estadoConfig]
-            return (
-              <Card key={equipo.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{equipo.nombre}</CardTitle>
-                      <CardDescription className="mt-1">{equipo.proyecto}</CardDescription>
-                    </div>
-                    <Badge className={config.className}>{config.label}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-4 text-sm">
-                    <Badge variant="outline">{equipo.carrera}</Badge>
-                    <span className="text-muted-foreground">{equipo.semestre} Semestre</span>
-                  </div>
+            <div className="space-y-3">
+              {filteredTeams.map((team) => {
+                const config = statusConfig[team.estado as keyof typeof statusConfig]
+                const StatusIcon = config.icon
 
-                  {/* Leader */}
-                  <div className="rounded-lg bg-muted/50 p-3">
-                    <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
-                      Líder del Equipo
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {equipo.lider.nombre.split(" ").map(n => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{equipo.lider.nombre}</p>
-                        <p className="text-xs text-muted-foreground">{equipo.lider.email}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Team Members */}
-                  <div>
-                    <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
-                      Integrantes ({equipo.integrantes.length})
-                    </p>
-                    <div className="flex -space-x-2">
-                      {equipo.integrantes.map((integrante, idx) => (
-                        <Avatar key={idx} className="h-8 w-8 border-2 border-background">
-                          <AvatarFallback className="bg-secondary text-xs">
-                            {integrante.nombre.split(" ").map(n => n[0]).join("")}
+                return (
+                  <div key={team.id} className="rounded-2xl border border-slate-200 p-4">
+                    <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+                      <div className="flex gap-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback className="bg-teal-100 font-semibold text-teal-800">
+                            {team.nombre.split(" ").map((part) => part[0]).join("").slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
-                      ))}
-                    </div>
-                  </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-slate-950">{team.nombre}</h3>
+                            <Badge className={config.className}>
+                              <StatusIcon className="mr-1 h-3.5 w-3.5" />
+                              {config.label}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 text-sm text-slate-600">{team.proyecto}</p>
+                          <p className="mt-1 text-xs font-medium text-slate-500">
+                            Lider: {team.lider} · {team.correo} · {team.semestre}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {team.materias.map((subject) => (
+                              <Badge key={subject} variant="outline">
+                                {subject}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
 
-                  {/* Stats */}
-                  <div className="flex items-center justify-between border-t border-border pt-4">
-                    <div>
-                      <p className="text-2xl font-bold text-primary">{equipo.promedioActual}</p>
-                      <p className="text-xs text-muted-foreground">Promedio actual</p>
+                      <div className="grid gap-3 sm:grid-cols-3 lg:w-[360px]">
+                        <div>
+                          <p className="text-xs font-medium text-slate-500">Evidencias</p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <Progress value={team.evidencias} className="h-2" />
+                            <span className="text-sm font-semibold">{team.evidencias}%</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-slate-500">Integrantes</p>
+                          <p className="mt-1 text-xl font-semibold text-slate-950">{team.integrantes.length + 1}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-slate-500">Promedio</p>
+                          <p className="mt-1 text-xl font-semibold text-slate-950">{team.promedio}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold">{equipo.evaluaciones}</p>
-                      <p className="text-xs text-muted-foreground">Evaluaciones</p>
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 gap-2">
-                      <Eye className="h-4 w-4" />
-                      Ver Detalles
-                    </Button>
-                    <Button size="sm" className="flex-1 gap-2">
-                      <Edit className="h-4 w-4" />
-                      Evaluar
-                    </Button>
+                    <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
+                      <Button variant="outline" size="sm">
+                        <Eye className="mr-2 h-4 w-4" />
+                        Ver expediente
+                      </Button>
+                      <Button size="sm">Asignar materia</Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

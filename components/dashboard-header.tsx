@@ -1,6 +1,7 @@
 "use client"
 
-import { Bell, Search, User } from "lucide-react"
+import { useAuth, getRoleName } from "@/contexts/auth-context"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
+import { Bell, LogOut, Search, User } from "lucide-react"
 
 interface DashboardHeaderProps {
   title: string
@@ -19,76 +20,81 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ title, description }: DashboardHeaderProps) {
+  const { user, logout } = useAuth()
+
+  const notifications =
+    user?.rol === "profesor"
+      ? ["2 evaluaciones pendientes", "Rubrica final disponible", "Retroalimentacion por completar"]
+      : user?.rol === "jefe_asignatura"
+        ? ["Rubrica en revision", "12 proyectos vinculados", "Criterios pendientes de ponderar"]
+        : ["3 equipos requieren seguimiento", "Reporte semanal disponible", "Rubricas listas para validar"]
+
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
+    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-4 border-b border-border bg-background/92 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+          {user && (
+            <Badge variant="outline" className="hidden border-teal-200 bg-teal-50 text-teal-700 sm:inline-flex">
+              {getRoleName(user.rol)}
+            </Badge>
+          )}
+        </div>
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative hidden md:block">
+      <div className="flex items-center gap-3">
+        <div className="relative hidden lg:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar proyectos, equipos..."
-            className="w-64 bg-secondary pl-9"
+            placeholder="Buscar proyectos, rubricas..."
+            className="h-10 w-72 border-border bg-white pl-9 shadow-sm"
           />
         </div>
 
-        {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs">
-                3
-              </Badge>
+            <Button variant="outline" size="icon" className="relative bg-white">
+              <Bell className="h-4 w-4" />
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                {notifications.length}
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex flex-col items-start gap-1">
-              <span className="font-medium">Nueva evaluación pendiente</span>
-              <span className="text-xs text-muted-foreground">
-                Equipo Alpha - Proyecto IoT
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1">
-              <span className="font-medium">Rúbrica actualizada</span>
-              <span className="text-xs text-muted-foreground">
-                Programación Web - 2do Parcial
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1">
-              <span className="font-medium">Calificaciones enviadas</span>
-              <span className="text-xs text-muted-foreground">
-                5 equipos notificados
-              </span>
-            </DropdownMenuItem>
+            {notifications.map((notification) => (
+              <DropdownMenuItem key={notification} className="flex flex-col items-start gap-1">
+                <span className="text-sm font-medium">{notification}</span>
+                <span className="text-xs text-muted-foreground">Actualizado en el periodo actual</span>
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-                <User className="h-4 w-4 text-primary-foreground" />
+            <Button variant="ghost" className="h-10 gap-2 rounded-full px-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <User className="h-4 w-4" />
               </div>
+              <span className="hidden max-w-32 truncate text-sm font-medium md:inline">
+                {user?.nombre.split(" ")[1] ?? "Usuario"}
+              </span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{user?.nombre}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configuración</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
-              Cerrar sesión
+            <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              Cerrar sesion
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

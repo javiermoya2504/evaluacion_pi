@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { hasPermission } from "@/lib/permissions"
 import { AppSidebar } from "@/components/app-sidebar"
-import { Loader2 } from "lucide-react"
+import { GraduationCap, Loader2 } from "lucide-react"
 
 export default function DashboardLayout({
   children,
@@ -13,34 +14,45 @@ export default function DashboardLayout({
 }) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (isLoading) return
+
+    if (!user) {
       router.push("/login")
+      return
     }
-  }, [user, isLoading, router])
+
+    if (!hasPermission(user.rol, pathname)) {
+      router.push("/dashboard")
+    }
+  }, [isLoading, pathname, router, user])
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Cargando...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <GraduationCap className="h-6 w-6" />
+          </div>
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Preparando panel...
+          </div>
         </div>
       </div>
     )
   }
 
-  if (!user) {
+  if (!user || !hasPermission(user.rol, pathname)) {
     return null
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="min-h-screen bg-background">
       <AppSidebar />
-      <main className="flex-1 pl-64 transition-all duration-300">
-        {children}
-      </main>
+      <main className="min-h-screen md:pl-72">{children}</main>
     </div>
   )
 }
