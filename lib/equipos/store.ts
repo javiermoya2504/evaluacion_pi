@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto"
 import { promises as fs } from "fs"
 import path from "path"
+import { cacheLife, cacheTag } from "next/cache"
+import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import { getMateriaById } from "@/lib/materias/store"
 import type { Equipo, EquipoWithRelations } from "@/lib/types/equipo"
 import type {
@@ -89,6 +91,11 @@ async function withRelations(equipo: Equipo): Promise<EquipoWithRelations> {
 }
 
 export async function getAllEquipos(): Promise<EquipoWithRelations[]> {
+  "use cache"
+
+  cacheLife(CACHE_LIFE.sprint8Data)
+  cacheTag(CACHE_TAGS.equipos)
+
   const equipos = await readEquipos()
   const sorted = equipos.sort((a, b) => a.nombre.localeCompare(b.nombre))
 
@@ -96,6 +103,11 @@ export async function getAllEquipos(): Promise<EquipoWithRelations[]> {
 }
 
 export async function getEquipoById(id: string): Promise<EquipoWithRelations | null> {
+  "use cache"
+
+  cacheLife(CACHE_LIFE.sprint8Data)
+  cacheTag(CACHE_TAGS.equipos)
+
   const equipos = await readEquipos()
   const equipo = equipos.find((item) => item.id === id)
 

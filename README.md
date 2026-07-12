@@ -9,6 +9,7 @@
 - [Sprint 5 - Backups PostgreSQL](docs/sprint-5-backups.md)
 - [Sprint 6 - Seguridad API y headers](docs/sprint-6-security.md)
 - [Sprint 7 - Monitoreo y release](docs/sprint-7-monitoring-release.md)
+- [Sprint 8 - Performance y cache](docs/sprint-8-performance.md)
 - [Railway staging](docs/railway-staging.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
   test suite y build en cada pull request y en los pushes a `feature`, `dev` y
@@ -23,6 +24,8 @@
   documentados para Sprint 6.
 - Monitoreo externo con healthcheck `/api/health`, script de UptimeRobot y
   preparacion de release `v0.2.0` documentados para Sprint 7.
+- Prueba basica de performance con k6, cache de Next.js e indices de soporte
+  para queries lentos documentados para Sprint 8.
 - Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
 - Orquestacion local en `compose.yaml`.
 
