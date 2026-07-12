@@ -8,6 +8,7 @@
 - [Sprint 4 - Buffer](docs/sprint-4-buffer.md)
 - [Sprint 5 - Backups PostgreSQL](docs/sprint-5-backups.md)
 - [Sprint 6 - Seguridad API y headers](docs/sprint-6-security.md)
+- [Sprint 7 - Monitoreo y release](docs/sprint-7-monitoring-release.md)
 - [Railway staging](docs/railway-staging.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
   test suite y build en cada pull request y en los pushes a `feature`, `dev` y
@@ -20,6 +21,8 @@
   semanal y script de restore documentados para Sprint 5.
 - Headers de seguridad, rate limiting en `/api/*` y checklist OWASP basico
   documentados para Sprint 6.
+- Monitoreo externo con healthcheck `/api/health`, script de UptimeRobot y
+  preparacion de release `v0.2.0` documentados para Sprint 7.
 - Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
 - Orquestacion local en `compose.yaml`.
 

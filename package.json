@@ -1,6 +1,6 @@
 {
   "name": "my-project",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "packageManager": "pnpm@10.11.0",
   "scripts": {
@@ -9,7 +9,8 @@
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "monitor:uptimerobot": "node scripts/configure-uptimerobot.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
