@@ -19,7 +19,7 @@
     ]
   },
   "deploy": {
-    "healthcheckPath": "/login",
+    "healthcheckPath": "/api/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
@@ -27,18 +27,18 @@
   "environments": {
     "dev": {
       "deploy": {
-        "healthcheckPath": "/login"
+        "healthcheckPath": "/api/health"
       }
     },
     "staging": {
       "deploy": {
-        "healthcheckPath": "/login",
+        "healthcheckPath": "/api/health",
         "restartPolicyMaxRetries": 5
       }
     },
     "pr": {
       "deploy": {
-        "healthcheckPath": "/login",
+        "healthcheckPath": "/api/health",
         "restartPolicyMaxRetries": 2
       }
     }

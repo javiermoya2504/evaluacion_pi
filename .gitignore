@@ -13,6 +13,7 @@ __v0_jsx-dev-runtime.ts
 !.env.development.example
 !.env.staging.example
 !.env.backup.example
+!.env.uptimerobot.example
 .env*.local
 
 # Database backups

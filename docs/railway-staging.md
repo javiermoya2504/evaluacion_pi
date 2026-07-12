@@ -11,7 +11,7 @@ detectar este repositorio:
 - Builder: `DOCKERFILE`.
 - Dockerfile: `Dockerfile.frontend`.
 - Start command: `CMD ["node", "server.js"]` desde el Dockerfile.
-- Healthcheck: `/login`.
+- Healthcheck: `/api/health`.
 - Restart policy: `ON_FAILURE`.
 - Overrides por ambiente: `dev`, `staging` y `pr`.
 
@@ -63,5 +63,5 @@ https://<dominio-staging>/api/auth/callback/google
    el buffer.
 5. Configurar las variables de entorno por ambiente.
 6. Generar dominio publico para cada ambiente.
-7. Verificar que `/login` pase el healthcheck.
+7. Verificar que `/api/health` pase el healthcheck.
 8. No promover nada hacia `main` hasta recibir autorizacion explicita.
