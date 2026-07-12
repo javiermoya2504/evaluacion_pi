@@ -1,6 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  cacheComponents: true,
+  cacheLife: {
+    default: {
+      stale: 60,
+      revalidate: 300,
+      expire: 3600,
+    },
+    sprint8Data: {
+      stale: 30,
+      revalidate: 120,
+      expire: 600,
+    },
+  },
   images: {
     unoptimized: true,
   },

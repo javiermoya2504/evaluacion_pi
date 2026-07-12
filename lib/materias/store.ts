@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto"
 import { promises as fs } from "fs"
 import path from "path"
+import { cacheLife, cacheTag } from "next/cache"
+import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import type { Materia } from "@/lib/types/materia"
 import type {
   CreateMateriaInput,
@@ -83,11 +85,21 @@ async function writeMaterias(materias: Materia[]): Promise<void> {
 }
 
 export async function getAllMaterias(): Promise<Materia[]> {
+  "use cache"
+
+  cacheLife(CACHE_LIFE.sprint8Data)
+  cacheTag(CACHE_TAGS.materias)
+
   const materias = await readMaterias()
   return materias.sort((a, b) => a.nombre.localeCompare(b.nombre))
 }
 
 export async function getMateriaById(id: string): Promise<Materia | null> {
+  "use cache"
+
+  cacheLife(CACHE_LIFE.sprint8Data)
+  cacheTag(CACHE_TAGS.materias)
+
   const materias = await readMaterias()
   return materias.find((materia) => materia.id === id) ?? null
 }
