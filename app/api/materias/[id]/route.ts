@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server"
+import { revalidateTag } from "next/cache"
 import { errorResponse, jsonResponse } from "@/lib/auth"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 import { withAuth, withRoles } from "@/lib/middleware/role"
 import {
   deleteMateria,
@@ -53,6 +55,7 @@ export const PUT = withRoles<RouteContext>(WRITE_ROLES, async (request: NextRequ
     }
 
     const materia = await updateMateria(id, parsed.data)
+    revalidateTag(CACHE_TAGS.materias, "max")
 
     return jsonResponse({
       success: true,
@@ -77,6 +80,7 @@ export const DELETE = withRoles<RouteContext>(WRITE_ROLES, async (_request, { pa
   try {
     const { id } = await params
     const materia = await deleteMateria(id)
+    revalidateTag(CACHE_TAGS.materias, "max")
 
     return jsonResponse({
       success: true,

@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server"
+import { revalidateTag } from "next/cache"
 import { errorResponse, jsonResponse } from "@/lib/auth"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 import { withAuth, withRoles } from "@/lib/middleware/role"
 import { createMateria, getAllMaterias } from "@/lib/materias/store"
 import { createMateriaSchema } from "@/lib/validations/materia"
@@ -35,6 +37,7 @@ export const POST = withRoles(WRITE_ROLES, async (request: NextRequest) => {
     }
 
     const materia = await createMateria(parsed.data)
+    revalidateTag(CACHE_TAGS.materias, "max")
 
     return jsonResponse(
       {
