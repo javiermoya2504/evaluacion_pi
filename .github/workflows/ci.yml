@@ -49,6 +49,23 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: test -n "$JWT_SECRET"
 
+      - name: Verify email secrets
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: |
+          test -n "$EMAIL_FROM"
+          if [ -n "$RESEND_API_KEY" ]; then
+            exit 0
+          fi
+          test -n "$SMTP_HOST"
+          test -n "$SMTP_USER"
+          test -n "$SMTP_PASSWORD"
+
       - name: Check TypeScript
         run: pnpm typecheck
 
@@ -59,3 +76,6 @@ jobs:
         run: pnpm build
         env:
           NEXTAUTH_SECRET: ${{ secrets.JWT_SECRET }}
+          EMAIL_PROVIDER: console
+          EMAIL_FROM: ci@example.com
+          EMAIL_ALLOW_CONSOLE: "true"
