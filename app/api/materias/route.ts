@@ -8,8 +8,6 @@ import { createMateriaSchema } from "@/lib/validations/materia"
 
 import type { Role } from "@/lib/types/auth"
 
-export const runtime = "nodejs"
-
 const WRITE_ROLES: Role[] = ["admin", "profesor"]
 
 export const GET = withAuth(async () => {

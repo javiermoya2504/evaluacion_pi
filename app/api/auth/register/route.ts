@@ -9,8 +9,6 @@ import {
 import { createUser } from "@/lib/users/store"
 import { registerSchema } from "@/lib/validations/auth"
 
-export const runtime = "nodejs"
-
 export async function POST(request: NextRequest) {
   try {
     getJwtSecret()
