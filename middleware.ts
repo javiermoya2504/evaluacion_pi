@@ -7,6 +7,8 @@ const API_RATE_LIMIT_WINDOW_MS = 60_000
 const API_RATE_LIMIT_MAX_REQUESTS = 100
 const API_RATE_LIMIT_AUTH_MAX_REQUESTS = 20
 
+const RATE_LIMIT_EXEMPT_ROUTES = ["/api/health", "/api/docs"]
+
 const PUBLIC_API_ROUTES = [
   "/api/auth/login",
   "/api/auth/register",
@@ -141,6 +143,14 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (!pathname.startsWith("/api/")) {
+    return NextResponse.next()
+  }
+
+  if (
+    RATE_LIMIT_EXEMPT_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`),
+    )
+  ) {
     return NextResponse.next()
   }
 
