@@ -25,6 +25,7 @@ export function getJwtSecret(): string {
   if (!jwtSecret) {
     throw new Error("JWT_SECRET no está configurado")
   }
+
   return jwtSecret
 }
 
