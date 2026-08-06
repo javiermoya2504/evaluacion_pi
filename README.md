@@ -10,6 +10,7 @@
 - [Sprint 6 - Seguridad API y headers](docs/sprint-6-security.md)
 - [Sprint 7 - Monitoreo y release](docs/sprint-7-monitoring-release.md)
 - [Sprint 8 - Performance y cache](docs/sprint-8-performance.md)
+- [Sprint 10 - Documentacion, performance y release](docs/sprint-10-release.md)
 - [Sprint 9 - Email y worker BullMQ](docs/sprint-9-email-worker.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
   test suite y build en cada pull request y en los pushes a `feature`, `dev` y

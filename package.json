@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "monitor:uptimerobot": "node scripts/configure-uptimerobot.mjs",
     "perf:k6": "k6 run tests/performance/k6-smoke.js",
+    "perf:final": "k6 run tests/performance/k6-final.js",
     "worker:email": "tsx workers/email-worker.ts"
   },
   "dependencies": {
