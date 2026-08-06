@@ -10,6 +10,7 @@
 - [Sprint 6 - Seguridad API y headers](docs/sprint-6-security.md)
 - [Sprint 7 - Monitoreo y release](docs/sprint-7-monitoring-release.md)
 - [Railway staging](docs/railway-staging.md)
+- [Sprint 10 - Documentacion, performance y release](docs/sprint-10-release.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
   test suite y build en cada pull request y en los pushes a `feature`, `dev` y
   `main`.

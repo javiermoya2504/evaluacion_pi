@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "monitor:uptimerobot": "node scripts/configure-uptimerobot.mjs"
+    "monitor:uptimerobot": "node scripts/configure-uptimerobot.mjs",
+    "perf:final": "k6 run tests/performance/k6-final.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
