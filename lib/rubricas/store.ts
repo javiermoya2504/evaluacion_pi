@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto"
 import { promises as fs } from "fs"
 import path from "path"
+import { cacheLife, cacheTag } from "next/cache"
+import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import type { Rubrica } from "@/lib/types/rubrica"
 import type { CreateRubricaInput } from "@/lib/validations/rubrica"
 
@@ -39,6 +41,11 @@ async function writeRubricas(rubricas: Rubrica[]): Promise<void> {
 }
 
 export async function getAllRubricas(): Promise<Rubrica[]> {
+  "use cache"
+
+  cacheLife(CACHE_LIFE.sprint8Data)
+  cacheTag(CACHE_TAGS.rubricas)
+
   return readRubricas()
 }
 

@@ -3,7 +3,7 @@ import { type UserRole } from "@/contexts/auth-context"
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   coordinadora_pi: ["*"],
   jefe_asignatura: ["/dashboard", "/dashboard/rubricas", "/dashboard/proyectos"],
-  profesor: ["/dashboard", "/dashboard/evaluaciones"],
+  profesor: ["/dashboard", "/dashboard/evaluaciones", "/dashboard/retroalimentacion"],
 }
 
 export function hasPermission(role: UserRole, path: string): boolean {

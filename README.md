@@ -9,22 +9,28 @@
 - [Sprint 5 - Backups PostgreSQL](docs/sprint-5-backups.md)
 - [Sprint 6 - Seguridad API y headers](docs/sprint-6-security.md)
 - [Sprint 7 - Monitoreo y release](docs/sprint-7-monitoring-release.md)
-- [Railway staging](docs/railway-staging.md)
+- [Sprint 8 - Performance y cache](docs/sprint-8-performance.md)
+- [Sprint 10 - Documentacion, performance y release](docs/sprint-10-release.md)
+- [Sprint 9 - Email y worker BullMQ](docs/sprint-9-email-worker.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
   test suite y build en cada pull request y en los pushes a `feature`, `dev` y
   `main`.
 - Preview automatico de Vercel para cada pull request mediante la integracion
   nativa del repositorio con Vercel.
-- Configuracion Railway en `railway.json` para los ambientes `dev`, `staging`
-  y `pr`.
+- Configuracion Vercel en `vercel.json` para build reproducible con pnpm y
+  previews por pull request.
 - Backups PostgreSQL con `pg_dump`, subida a Google Drive con `rclone`, cron
   semanal y script de restore documentados para Sprint 5.
 - Headers de seguridad, rate limiting en `/api/*` y checklist OWASP basico
   documentados para Sprint 6.
 - Monitoreo externo con healthcheck `/api/health`, script de UptimeRobot y
   preparacion de release `v0.2.0` documentados para Sprint 7.
+- Prueba basica de performance con k6, cache de Next.js e indices de soporte
+  para queries lentos documentados para Sprint 8.
+- Email transaccional con Resend/SMTP, cola BullMQ y worker separado
+  documentados para Sprint 9.
 - Contenedores de produccion en `Dockerfile.frontend` y `Dockerfile.backend`.
-- Orquestacion local en `compose.yaml`.
+- Worker de email en `Dockerfile.worker` y orquestacion local en `compose.yaml`.
 
 La aplicacion actual es un proyecto Next.js full-stack. Las paginas y las rutas
 API de `app/api` se compilan en un mismo runtime standalone; por ello ambos
@@ -34,6 +40,7 @@ para el entregable de frontend y backend.
 ```bash
 docker build -f Dockerfile.frontend -t evaluacion-pi-frontend .
 docker build -f Dockerfile.backend -t evaluacion-pi-backend .
+docker build -f Dockerfile.worker -t evaluacion-pi-email-worker .
 docker run --rm -p 3000:3000 --env-file .env.local evaluacion-pi-frontend
 docker compose up --build --wait
 docker compose down
@@ -41,15 +48,20 @@ docker compose down
 
 El servicio `frontend` queda disponible en `http://localhost:3000` y el
 servicio `backend` en `http://localhost:3001`. Ambos reutilizan `.env.local`
-cuando el archivo existe.
+cuando el archivo existe. `email-worker` consume la cola BullMQ `email` desde
+Redis y escribe logs estructurados en consola.
 
 Para trabajar con ambientes separados, usar `.env.development.example` como
-referencia local/dev y `.env.staging.example` como referencia para Railway
-staging. Los secretos reales se cargan en el proveedor del ambiente.
+referencia local/dev y `.env.staging.example` como referencia para Vercel
+Preview/Staging. Los secretos reales se cargan en el proveedor del ambiente.
 
 En GitHub Actions, el secreto del repositorio `JWT_SECRET` se inyecta como
 `NEXTAUTH_SECRET` durante el build. CI falla de forma explicita en ramas del
 repositorio si el secreto no esta configurado.
+
+Para Sprint 9, GitHub Actions tambien valida `EMAIL_FROM` y una configuracion
+de entrega: `RESEND_API_KEY` o el conjunto SMTP `SMTP_HOST`, `SMTP_USER` y
+`SMTP_PASSWORD`.
 
 `pnpm build` ejecuta ESLint antes de compilar. Cualquier error de ESLint o
 TypeScript detiene el build y bloquea la validacion del pull request.
