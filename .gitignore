@@ -1,0 +1,32 @@
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.development.example
+!.env.staging.example
+!.env.backup.example
+!.env.uptimerobot.example
+.env*.local
+
+# Database backups
+backups/
+*.dump
+*.dump.gz
+
+# Local user store
+data/
+
+# Common ignores
+node_modules
+.pnpm-store/
+.next/
+tsconfig.tsbuildinfo
+.DS_Store

@@ -1,0 +1,12 @@
+# Sprint 5 - Weekly PostgreSQL backup to Google Drive.
+#
+# Install on the server with:
+#   crontab ops/cron/evaluacion-pi-backup.cron
+#
+# Runs every Sunday at 03:00 server time. Adjust the hour if this overlaps
+# maintenance windows.
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+0 3 * * 0 BACKUP_ENV_FILE=/etc/evaluacion-pi/backup.env /opt/evaluacion_pi/scripts/backup-postgres-to-gdrive.sh >> /var/log/evaluacion-pi-backup.log 2>&1
