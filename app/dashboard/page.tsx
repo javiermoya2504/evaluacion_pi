@@ -373,6 +373,29 @@ function ProfesorDashboard() {
   )
 }
 
+function AlumnoDashboard() {
+  const { user } = useAuth()
+
+  return (
+    <div className="flex flex-col">
+      <DashboardHeader
+        title={`Hola, ${user?.nombre ?? "alumno"}`}
+        description="Tu cuenta de alumno ya está autenticada en SIGEP-PI"
+      />
+      <div className="flex-1 p-6">
+        <Card className="border-none bg-white shadow-sm shadow-slate-200/70">
+          <CardHeader>
+            <CardTitle>Acceso de alumno activo</CardTitle>
+            <CardDescription>
+              El registro público crea este rol correctamente. Las funciones específicas de alumno quedan pendientes.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const { user } = useAuth()
 
@@ -382,6 +405,10 @@ export default function DashboardPage() {
 
   if (user?.rol === "profesor") {
     return <ProfesorDashboard />
+  }
+
+  if (user?.rol === "alumno") {
+    return <AlumnoDashboard />
   }
 
   return <CoordinadoraDashboard />

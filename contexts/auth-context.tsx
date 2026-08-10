@@ -12,7 +12,7 @@ import {
 import { useRouter } from "next/navigation"
 import { SessionProvider, signOut, useSession } from "next-auth/react"
 
-export type UserRole = "coordinadora_pi" | "jefe_asignatura" | "profesor"
+export type UserRole = "coordinadora_pi" | "jefe_asignatura" | "profesor" | "alumno"
 
 export interface User {
   id: string
@@ -36,6 +36,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const AUTH_STORAGE_KEY = "sigep_user"
+const AUTH_TOKEN_STORAGE_KEY = "sigep_token"
 const AUTH_STORAGE_EVENT = "sigep-auth-change"
 
 const demoUsers: Record<string, User & { password: string }> = {
@@ -139,19 +140,41 @@ function AuthStateProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsAuthenticating(true)
 
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-    const demoUser = demoUsers[email.toLowerCase()]
+      if (response.ok) {
+        const data = (await response.json()) as {
+          user?: User
+          token?: string
+        }
 
-    if (demoUser && demoUser.password === password) {
-      const userWithoutPassword = removePassword(demoUser)
-      setStoredUser(userWithoutPassword)
+        if (data.user && data.token) {
+          setStoredSession(data.user, data.token)
+          return true
+        }
+      }
+
+      const demoUser = demoUsers[email.toLowerCase()]
+
+      if (demoUser && demoUser.password === password) {
+        const userWithoutPassword = removePassword(demoUser)
+        setStoredSession(userWithoutPassword, "")
+        return true
+      }
+
+      return false
+    } catch {
+      return false
+    } finally {
       setIsAuthenticating(false)
-      return true
     }
-
-    setIsAuthenticating(false)
-    return false
   }
 
   const logout = () => {
@@ -246,14 +269,22 @@ function parseStoredUser(value: string | null): User | null {
   }
 }
 
-function setStoredUser(user: User) {
+function setStoredSession(user: User, token: string) {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
+  if (token) {
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token)
+  } else {
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+  }
   window.dispatchEvent(new Event(AUTH_STORAGE_EVENT))
 }
 
 function clearStoredUser() {
-  if (!localStorage.getItem(AUTH_STORAGE_KEY)) return
+  const hasStoredUser = localStorage.getItem(AUTH_STORAGE_KEY)
+  const hasStoredToken = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  if (!hasStoredUser && !hasStoredToken) return
   localStorage.removeItem(AUTH_STORAGE_KEY)
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
   window.dispatchEvent(new Event(AUTH_STORAGE_EVENT))
 }
 
@@ -276,6 +307,7 @@ export function getRoleName(rol: UserRole): string {
     coordinadora_pi: "Coordinadora PI",
     jefe_asignatura: "Jefe de asignatura",
     profesor: "Profesor evaluador",
+    alumno: "Alumno",
   }
   return roles[rol]
 }
@@ -285,6 +317,7 @@ export function getRoleColor(rol: UserRole): string {
     coordinadora_pi: "border-teal-200 bg-teal-50 text-teal-700",
     jefe_asignatura: "border-blue-200 bg-blue-50 text-blue-700",
     profesor: "border-amber-200 bg-amber-50 text-amber-700",
+    alumno: "border-emerald-200 bg-emerald-50 text-emerald-700",
   }
   return colors[rol]
 }

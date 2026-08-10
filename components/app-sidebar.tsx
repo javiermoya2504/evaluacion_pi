@@ -35,7 +35,7 @@ const navigation: NavigationItem[] = [
     href: "/dashboard",
     icon: LayoutDashboard,
     description: "Resumen por rol",
-    roles: ["coordinadora_pi", "jefe_asignatura", "profesor"],
+    roles: ["coordinadora_pi", "jefe_asignatura", "profesor", "alumno"],
   },
   {
     name: "Rubricas",

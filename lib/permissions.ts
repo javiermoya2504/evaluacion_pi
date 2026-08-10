@@ -4,6 +4,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   coordinadora_pi: ["*"],
   jefe_asignatura: ["/dashboard", "/dashboard/rubricas", "/dashboard/proyectos"],
   profesor: ["/dashboard", "/dashboard/evaluaciones", "/dashboard/retroalimentacion"],
+  alumno: ["/dashboard"],
 }
 
 export function hasPermission(role: UserRole, path: string): boolean {
