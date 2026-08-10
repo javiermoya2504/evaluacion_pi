@@ -44,6 +44,13 @@ export async function findUserByEmail(email: string): Promise<StoredUser | null>
   return users.find((user) => user.email === email.toLowerCase()) ?? null
 }
 
+export async function getAllUsers(): Promise<AuthUser[]> {
+  const users = await readUsers()
+  return users
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    .map((user) => toPublicUser(user))
+}
+
 export async function findUserById(id: string): Promise<StoredUser | null> {
   const users = await readUsers()
   return users.find((user) => user.id === id) ?? null

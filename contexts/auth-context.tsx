@@ -12,7 +12,7 @@ import {
 import { useRouter } from "next/navigation"
 import { SessionProvider, signOut, useSession } from "next-auth/react"
 
-export type UserRole = "coordinadora_pi" | "jefe_asignatura" | "profesor" | "alumno"
+export type UserRole = "admin" | "coordinadora_pi" | "jefe_asignatura" | "profesor" | "alumno"
 
 export interface User {
   id: string
@@ -304,6 +304,7 @@ export function useAuth() {
 
 export function getRoleName(rol: UserRole): string {
   const roles: Record<UserRole, string> = {
+    admin: "Administrador",
     coordinadora_pi: "Coordinadora PI",
     jefe_asignatura: "Jefe de asignatura",
     profesor: "Profesor evaluador",
@@ -314,6 +315,7 @@ export function getRoleName(rol: UserRole): string {
 
 export function getRoleColor(rol: UserRole): string {
   const colors: Record<UserRole, string> = {
+    admin: "border-teal-200 bg-teal-50 text-teal-700",
     coordinadora_pi: "border-teal-200 bg-teal-50 text-teal-700",
     jefe_asignatura: "border-blue-200 bg-blue-50 text-blue-700",
     profesor: "border-amber-200 bg-amber-50 text-amber-700",
