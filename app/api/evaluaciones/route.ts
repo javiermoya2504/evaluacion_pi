@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server"
+import { revalidateTag } from "next/cache"
 import { errorResponse, jsonResponse } from "@/lib/auth"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 import { withAuth, withRoles } from "@/lib/middleware/role"
 import {
   createEvaluacion,
@@ -8,8 +10,6 @@ import {
 } from "@/lib/evaluaciones/store"
 import { createEvaluacionSchema, updateEvaluacionSchema } from "@/lib/validations/evaluacion"
 import type { Role } from "@/lib/types/auth"
-
-export const runtime = "nodejs"
 
 const WRITE_ROLES: Role[] = ["admin", "profesor"]
 
@@ -38,6 +38,7 @@ export const POST = withRoles(WRITE_ROLES, async (request: NextRequest) => {
     }
 
     const evaluacion = await createEvaluacion(parsed.data)
+    revalidateTag(CACHE_TAGS.evaluaciones, "max")
 
     return jsonResponse(
       {
@@ -64,6 +65,7 @@ export const PUT = withRoles(WRITE_ROLES, async (request: NextRequest) => {
     }
 
     const evaluacion = await updateEvaluacion(parsed.data.id, parsed.data)
+    revalidateTag(CACHE_TAGS.evaluaciones, "max")
 
     return jsonResponse({
       success: true,

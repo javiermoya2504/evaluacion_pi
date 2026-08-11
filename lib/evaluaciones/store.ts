@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto"
 import { promises as fs } from "fs"
 import path from "path"
+import { cacheLife, cacheTag } from "next/cache"
+import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import type { Evaluacion } from "@/lib/types/evaluacion"
 import type {
   CreateEvaluacionInput,
@@ -38,6 +40,11 @@ async function writeEvaluaciones(evaluaciones: Evaluacion[]): Promise<void> {
 }
 
 export async function getAllEvaluaciones(): Promise<Evaluacion[]> {
+  "use cache"
+
+  cacheLife(CACHE_LIFE.sprint8Data)
+  cacheTag(CACHE_TAGS.evaluaciones)
+
   const evaluaciones = await readEvaluaciones()
   return evaluaciones.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }

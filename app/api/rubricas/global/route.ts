@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server"
+import { revalidateTag } from "next/cache"
 import { errorResponse, jsonResponse } from "@/lib/auth"
+import { CACHE_TAGS } from "@/lib/cache-tags"
 import { withAuth, withRoles } from "@/lib/middleware/role"
 import { createRubrica, getAllRubricas } from "@/lib/rubricas/store"
 import { createRubricaSchema } from "@/lib/validations/rubrica"
 
 import type { Role } from "@/lib/types/auth"
-
-export const runtime = "nodejs"
 
 const WRITE_ROLES: Role[] = ["admin", "profesor"]
 
@@ -35,6 +35,7 @@ export const POST = withRoles(WRITE_ROLES, async (request: NextRequest) => {
     }
 
     const rubrica = await createRubrica(parsed.data)
+    revalidateTag(CACHE_TAGS.rubricas, "max")
 
     return jsonResponse(
       {

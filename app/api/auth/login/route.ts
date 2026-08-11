@@ -9,8 +9,6 @@ import {
 import { findUserByEmail, toPublicUser } from "@/lib/users/store"
 import { loginSchema } from "@/lib/validations/auth"
 
-export const runtime = "nodejs"
-
 export async function POST(request: NextRequest) {
   try {
     getJwtSecret()

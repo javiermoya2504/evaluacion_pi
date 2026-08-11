@@ -10,12 +10,15 @@ import { Button } from "@/components/ui/button"
 import {
   BarChart3,
   BookOpenCheck,
+  History,
   ClipboardList,
   GraduationCap,
   LayoutDashboard,
   LogOut,
   ShieldCheck,
   Users,
+  MessageSquareText,
+  MailCheck,
 } from "lucide-react"
 
 type NavigationItem = {
@@ -63,10 +66,31 @@ const navigation: NavigationItem[] = [
     roles: ["coordinadora_pi", "profesor"],
   },
   {
+    name: "Retroalimentacion",
+    href: "/dashboard/retroalimentacion",
+    icon: MessageSquareText,
+    description: "Seguimiento por equipo",
+    roles: ["coordinadora_pi", "profesor"],
+  },
+  {
+    name: "Transparencia",
+    href: "/dashboard/transparencia",
+    icon: History,
+    description: "Trazabilidad y auditoria",
+    roles: ["coordinadora_pi"],
+  },
+  {
     name: "Reportes",
     href: "/dashboard/reportes",
     icon: BarChart3,
     description: "Indicadores y resultados",
+    roles: ["coordinadora_pi"],
+  },
+  {
+    name: "Notificaciones",
+    href: "/dashboard/notificaciones",
+    icon: MailCheck,
+    description: "Correos y reenvios",
     roles: ["coordinadora_pi"],
   },
 ]
