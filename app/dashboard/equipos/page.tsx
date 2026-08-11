@@ -1,113 +1,209 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
-  AlertTriangle,
-  BookOpenCheck,
-  CheckCircle2,
-  Eye,
-  type LucideIcon,
-  Plus,
-  Search,
-  Users,
-} from "lucide-react"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AlertTriangle, BookOpenCheck, CheckCircle2, Loader2, Pencil, Plus, Search, Trash2, Users } from "lucide-react"
 
-const teams = [
-  {
-    id: 1,
-    nombre: "Equipo Aurum",
-    proyecto: "Sistema de gestion de laboratorios UPQ",
-    carrera: "Ingenieria en Software",
-    semestre: "7mo",
-    lider: "Carlos Mendez",
-    correo: "carlos.mendez@upq.edu.mx",
-    integrantes: ["Maria Lopez", "Juan Perez", "Ana Garcia", "Pedro Sanchez"],
-    materias: ["Desarrollo de Software", "Base de Datos", "Interfaces Web"],
-    evidencias: 82,
-    estado: "activo",
-    promedio: 89,
-  },
-  {
-    id: 2,
-    nombre: "Equipo Nexus",
-    proyecto: "App de seguimiento academico",
-    carrera: "Ingenieria en Software",
-    semestre: "6to",
-    lider: "Laura Ramirez",
-    correo: "laura.ramirez@upq.edu.mx",
-    integrantes: ["Diego Torres", "Sofia Hernandez", "Miguel Flores"],
-    materias: ["Proyecto Integrador", "Calidad de Software"],
-    evidencias: 64,
-    estado: "riesgo",
-    promedio: 78,
-  },
-  {
-    id: 3,
-    nombre: "Equipo Innova",
-    proyecto: "Panel IoT para eficiencia energetica",
-    carrera: "Ingenieria en Tecnologias de Manufactura",
-    semestre: "8vo",
-    lider: "Roberto Diaz",
-    correo: "roberto.diaz@upq.edu.mx",
-    integrantes: ["Carmen Ruiz", "Fernando Vega", "Patricia Luna", "Andres Castro"],
-    materias: ["Sistemas Embebidos", "Proyecto Integrador", "Analitica"],
-    evidencias: 96,
-    estado: "validado",
-    promedio: 94,
-  },
-]
-
-const statusConfig = {
-  activo: { label: "Activo", className: "bg-blue-50 text-blue-700 border-blue-200", icon: BookOpenCheck },
-  riesgo: { label: "Requiere seguimiento", className: "bg-amber-50 text-amber-700 border-amber-200", icon: AlertTriangle },
-  validado: { label: "Validado", className: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
+type Materia = {
+  id: string
+  nombre: string
+  cuatrimestre: number
+  profesor: string
+  activa: boolean
 }
 
-type SummaryMetric = {
-  label: string
-  value: number
-  icon: LucideIcon
-  tone: string
+type UserOption = {
+  id: string
+  nombre: string
+  email: string
+  rol: string
 }
+
+type Equipo = {
+  id: string
+  nombre: string
+  materiaId: string
+  integranteIds: string[]
+  materia?: Materia | null
+  integrantes?: UserOption[]
+}
+
+const AUTH_TOKEN_STORAGE_KEY = "sigep_token"
 
 export default function EquiposPage() {
   const { user } = useAuth()
+  const [equipos, setEquipos] = useState<Equipo[]>([])
+  const [materias, setMaterias] = useState<Materia[]>([])
+  const [users, setUsers] = useState<UserOption[]>([])
   const [query, setQuery] = useState("")
-  const [status, setStatus] = useState("todos")
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [message, setMessage] = useState("")
+  const [error, setError] = useState("")
+  const [editingEquipo, setEditingEquipo] = useState<Equipo | null>(null)
+  const [form, setForm] = useState({ nombre: "", materiaId: "", integranteIds: [] as string[] })
 
-  const filteredTeams = useMemo(
+  const canManageEquipos = user?.rol === "admin" || user?.rol === "coordinadora_pi"
+
+  useEffect(() => {
+    if (!canManageEquipos) {
+      return
+    }
+
+    loadData()
+  }, [canManageEquipos])
+
+  const filteredEquipos = useMemo(
     () =>
-      teams.filter((team) => {
-        const text = `${team.nombre} ${team.proyecto} ${team.lider} ${team.carrera}`.toLowerCase()
-        const matchesQuery = text.includes(query.toLowerCase())
-        const matchesStatus = status === "todos" || team.estado === status
-        return matchesQuery && matchesStatus
+      equipos.filter((equipo) => {
+        const text = `${equipo.nombre} ${equipo.materia?.nombre ?? ""} ${equipo.integrantes?.map((item) => item.nombre).join(" ") ?? ""}`.toLowerCase()
+        return text.includes(query.toLowerCase())
       }),
-    [query, status]
+    [equipos, query],
   )
 
-  if (user?.rol !== "coordinadora_pi") {
+  async function loadData() {
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const [equiposResponse, materiasResponse, usersResponse] = await Promise.all([
+        authFetch("/api/equipos"),
+        authFetch("/api/materias"),
+        authFetch("/api/users"),
+      ])
+
+      if (!equiposResponse.ok || !materiasResponse.ok || !usersResponse.ok) {
+        throw new Error("No se pudieron cargar los datos reales")
+      }
+
+      const equiposData = (await equiposResponse.json()) as { equipos: Equipo[] }
+      const materiasData = (await materiasResponse.json()) as { materias: Materia[] }
+      const usersData = (await usersResponse.json()) as { users: UserOption[] }
+
+      setEquipos(equiposData.equipos)
+      setMaterias(materiasData.materias)
+      setUsers(usersData.users)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar los equipos")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  function openEditModal(equipo: Equipo) {
+    setEditingEquipo(equipo)
+    setForm({
+      nombre: equipo.nombre,
+      materiaId: equipo.materiaId,
+      integranteIds: equipo.integranteIds,
+    })
+    setMessage("")
+    setError("")
+  }
+
+  function toggleIntegrante(userId: string) {
+    setForm((current) => ({
+      ...current,
+      integranteIds: current.integranteIds.includes(userId)
+        ? current.integranteIds.filter((id) => id !== userId)
+        : [...current.integranteIds, userId],
+    }))
+  }
+
+  async function saveEquipo() {
+    if (!editingEquipo) return
+
+    setIsSaving(true)
+    setMessage("")
+    setError("")
+
+    try {
+      const response = await authFetch("/api/equipos", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: editingEquipo.id,
+          nombre: form.nombre,
+          materiaId: form.materiaId,
+          integranteIds: form.integranteIds,
+        }),
+      })
+
+      const data = (await response.json()) as { equipo?: Equipo; message?: string }
+
+      if (!response.ok || !data.equipo) {
+        throw new Error(data.message ?? "No se pudo guardar el equipo")
+      }
+
+      setEquipos((current) => current.map((equipo) => (equipo.id === data.equipo?.id ? data.equipo : equipo)))
+      setMessage("Equipo actualizado correctamente")
+      setEditingEquipo(null)
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el equipo")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function removeIntegrante(equipo: Equipo, integranteId: string) {
+    setMessage("")
+    setError("")
+
+    try {
+      const response = await authFetch("/api/equipos", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: equipo.id,
+          integranteIds: equipo.integranteIds.filter((id) => id !== integranteId),
+        }),
+      })
+
+      const data = (await response.json()) as { equipo?: Equipo; message?: string }
+
+      if (!response.ok || !data.equipo) {
+        throw new Error(data.message ?? "No se pudo eliminar el integrante")
+      }
+
+      setEquipos((current) => current.map((item) => (item.id === data.equipo?.id ? data.equipo : item)))
+      setMessage("Integrante eliminado correctamente")
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : "No se pudo eliminar el integrante")
+    }
+  }
+
+  if (!canManageEquipos) {
     return (
       <div className="flex flex-col">
-        <DashboardHeader
-          title="Acceso restringido"
-          description="Tu rol no tiene permisos para administrar equipos"
-        />
+        <DashboardHeader title="Acceso restringido" description="Tu rol no tiene permisos para administrar equipos" />
         <div className="p-6">
           <Card className="border-amber-200 bg-amber-50">
             <CardContent className="p-6">
-              <p className="font-semibold text-amber-950">Modulo reservado para Coordinadora PI.</p>
+              <p className="font-semibold text-amber-950">Modulo reservado para administracion academica.</p>
               <p className="mt-2 text-sm text-amber-800">
-                La gestion de equipos, alumnos y asignaciones corresponde al rol de coordinacion.
+                Alumnos y profesores sin permisos administrativos no pueden editar equipos.
               </p>
             </CardContent>
           </Card>
@@ -118,139 +214,213 @@ export default function EquiposPage() {
 
   return (
     <div className="flex flex-col">
-      <DashboardHeader
-        title="Equipos PI"
-        description="Panel coordinador PI: lista, estado y evidencias de equipos"
-      />
+      <DashboardHeader title="Equipos PI" description="Equipos, materias e integrantes conectados a la API" />
 
       <div className="flex-1 space-y-6 p-6">
-        <section className="grid gap-4 md:grid-cols-4">
-          {([
-            { label: "Equipos", value: teams.length, icon: Users, tone: "bg-teal-50 text-teal-700" },
-            { label: "En seguimiento", value: teams.filter((team) => team.estado === "riesgo").length, icon: AlertTriangle, tone: "bg-amber-50 text-amber-700" },
-            { label: "Validados", value: teams.filter((team) => team.estado === "validado").length, icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-700" },
-            { label: "Promedio general", value: Math.round(teams.reduce((sum, team) => sum + team.promedio, 0) / teams.length), icon: BookOpenCheck, tone: "bg-blue-50 text-blue-700" },
-          ] satisfies SummaryMetric[]).map(({ label, value, icon: Icon, tone }) => (
-            <Card key={label} className="border-none bg-white shadow-sm shadow-slate-200/70">
-              <CardContent className="flex items-start justify-between p-5">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">{label}</p>
-                  <p className="mt-3 text-3xl font-semibold text-slate-950">{value}</p>
-                </div>
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <section className="grid gap-4 md:grid-cols-3">
+          <SummaryCard label="Equipos" value={equipos.length} icon={Users} tone="bg-teal-50 text-teal-700" />
+          <SummaryCard label="Materias activas" value={materias.filter((materia) => materia.activa).length} icon={BookOpenCheck} tone="bg-blue-50 text-blue-700" />
+          <SummaryCard label="Usuarios disponibles" value={users.length} icon={CheckCircle2} tone="bg-emerald-50 text-emerald-700" />
         </section>
+
+        {message && <StatusMessage tone="success" message={message} />}
+        {error && <StatusMessage tone="error" message={error} />}
 
         <Card className="border-none bg-white shadow-sm shadow-slate-200/70">
           <CardHeader>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <CardTitle>Lista de equipos registrados</CardTitle>
-                <CardDescription>Simula el entregable GET/POST/PUT de equipos mientras el backend queda listo</CardDescription>
+                <CardDescription>Datos cargados desde GET /api/equipos, GET /api/materias y GET /api/users</CardDescription>
               </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Registrar equipo
+              <Button onClick={loadData} variant="outline" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                Refrescar
               </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-3 md:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  className="pl-9"
-                  placeholder="Buscar por equipo, proyecto, lider o carrera"
-                />
-              </div>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="w-full md:w-[220px]">
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos los estados</SelectItem>
-                  <SelectItem value="activo">Activos</SelectItem>
-                  <SelectItem value="riesgo">Requieren seguimiento</SelectItem>
-                  <SelectItem value="validado">Validados</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                className="pl-9"
+                placeholder="Buscar por equipo, materia o integrante"
+              />
             </div>
 
-            <div className="space-y-3">
-              {filteredTeams.map((team) => {
-                const config = statusConfig[team.estado as keyof typeof statusConfig]
-                const StatusIcon = config.icon
-
-                return (
-                  <div key={team.id} className="rounded-2xl border border-slate-200 p-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 p-8 text-sm text-slate-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Cargando equipos reales...
+              </div>
+            ) : filteredEquipos.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+                No hay equipos para mostrar.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredEquipos.map((equipo) => (
+                  <div key={equipo.id} className="rounded-2xl border border-slate-200 p-4">
                     <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
                       <div className="flex gap-4">
                         <Avatar className="h-12 w-12">
                           <AvatarFallback className="bg-teal-100 font-semibold text-teal-800">
-                            {team.nombre.split(" ").map((part) => part[0]).join("").slice(0, 2)}
+                            {equipo.nombre.split(" ").map((part) => part[0]).join("").slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-semibold text-slate-950">{team.nombre}</h3>
-                            <Badge className={config.className}>
-                              <StatusIcon className="mr-1 h-3.5 w-3.5" />
-                              {config.label}
-                            </Badge>
+                            <h3 className="font-semibold text-slate-950">{equipo.nombre}</h3>
+                            <Badge variant="outline">{equipo.materia?.nombre ?? "Sin materia"}</Badge>
                           </div>
-                          <p className="mt-1 text-sm text-slate-600">{team.proyecto}</p>
                           <p className="mt-1 text-xs font-medium text-slate-500">
-                            Lider: {team.lider} · {team.correo} · {team.semestre}
+                            ID: {equipo.id} · MateriaId: {equipo.materiaId}
                           </p>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {team.materias.map((subject) => (
-                              <Badge key={subject} variant="outline">
-                                {subject}
-                              </Badge>
-                            ))}
+                            {(equipo.integrantes ?? []).length > 0 ? (
+                              equipo.integrantes?.map((integrante) => (
+                                <Badge key={integrante.id} variant="outline" className="gap-1">
+                                  {integrante.nombre}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeIntegrante(equipo, integrante.id)}
+                                    className="ml-1 rounded-full text-slate-500 hover:text-red-600"
+                                    aria-label={`Eliminar ${integrante.nombre}`}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-sm text-slate-500">Sin integrantes asignados</span>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid gap-3 sm:grid-cols-3 lg:w-[360px]">
-                        <div>
-                          <p className="text-xs font-medium text-slate-500">Evidencias</p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <Progress value={team.evidencias} className="h-2" />
-                            <span className="text-sm font-semibold">{team.evidencias}%</span>
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500">Integrantes</p>
-                          <p className="mt-1 text-xl font-semibold text-slate-950">{team.integrantes.length + 1}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500">Promedio</p>
-                          <p className="mt-1 text-xl font-semibold text-slate-950">{team.promedio}</p>
-                        </div>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => openEditModal(equipo)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Editar equipo
+                        </Button>
+                        <Button size="sm" onClick={() => openEditModal(equipo)}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Asignar materia/integrantes
+                        </Button>
                       </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4">
-                      <Button variant="outline" size="sm">
-                        <Eye className="mr-2 h-4 w-4" />
-                        Ver expediente
-                      </Button>
-                      <Button size="sm">Asignar materia</Button>
                     </div>
                   </div>
-                )
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={Boolean(editingEquipo)} onOpenChange={(open) => !open && setEditingEquipo(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar equipo</DialogTitle>
+            <DialogDescription>Los cambios se guardan con PUT /api/equipos.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="equipo-nombre">Nombre</Label>
+              <Input id="equipo-nombre" value={form.nombre} onChange={(event) => setForm((current) => ({ ...current, nombre: event.target.value }))} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Materia</Label>
+              <Select value={form.materiaId} onValueChange={(materiaId) => setForm((current) => ({ ...current, materiaId }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una materia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {materias.map((materia) => (
+                    <SelectItem key={materia.id} value={materia.id}>
+                      {materia.nombre} · {materia.profesor}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Integrantes</Label>
+              <div className="max-h-64 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-3">
+                {users.length === 0 ? (
+                  <p className="text-sm text-slate-500">No hay usuarios disponibles.</p>
+                ) : (
+                  users.map((candidate) => (
+                    <label key={candidate.id} className="flex cursor-pointer items-start gap-3 rounded-lg p-2 hover:bg-slate-50">
+                      <Checkbox checked={form.integranteIds.includes(candidate.id)} onCheckedChange={() => toggleIntegrante(candidate.id)} />
+                      <span>
+                        <span className="block text-sm font-medium text-slate-950">{candidate.nombre}</span>
+                        <span className="block text-xs text-slate-500">{candidate.email} · {candidate.rol}</span>
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingEquipo(null)} disabled={isSaving}>Cancelar</Button>
+            <Button onClick={saveEquipo} disabled={isSaving || !form.nombre.trim() || !form.materiaId}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Guardar cambios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
+}
+
+function SummaryCard({ label, value, icon: Icon, tone }: { label: string; value: number; icon: typeof Users; tone: string }) {
+  return (
+    <Card className="border-none bg-white shadow-sm shadow-slate-200/70">
+      <CardContent className="flex items-start justify-between p-5">
+        <div>
+          <p className="text-sm font-medium text-slate-500">{label}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-950">{value}</p>
+        </div>
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function StatusMessage({ tone, message }: { tone: "success" | "error"; message: string }) {
+  const className =
+    tone === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : "border-red-200 bg-red-50 text-red-700"
+
+  return (
+    <div className={`flex items-center gap-2 rounded-xl border p-3 text-sm ${className}`}>
+      {tone === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+      {message}
+    </div>
+  )
+}
+
+function authFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const token = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  const headers = new Headers(init.headers)
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`)
+  }
+
+  return fetch(input, {
+    ...init,
+    headers,
+  })
 }

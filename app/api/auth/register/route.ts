@@ -25,13 +25,13 @@ export async function POST(request: NextRequest) {
       return errorResponse("Datos de registro inválidos", 400, errors)
     }
 
-    const { email, password, nombre, rol } = parsed.data
+    const { email, password, nombre } = parsed.data
     const passwordHash = await hashPassword(password)
 
     const user = await createUser({
       email,
       nombre,
-      rol,
+      rol: "alumno",
       passwordHash,
     })
 
