@@ -1,4 +1,4 @@
-export const ROLES = ["admin", "profesor", "alumno"] as const
+export const ROLES = ["admin", "profesor", "alumno", "coordinadora_pi", "jefe_asignatura"] as const
 
 export type Role = (typeof ROLES)[number]
 
