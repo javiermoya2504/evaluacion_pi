@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, type CSSProperties } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { useAuth, type UserRole } from "@/contexts/auth-context"
@@ -368,6 +369,13 @@ export default function LoginPage() {
                     </span>
                     Continuar con Google
                   </Button>
+
+                  <p className="text-center text-sm text-slate-600">
+                    ¿No tienes cuenta?{" "}
+                    <Link href="/register" className="font-semibold text-[var(--role-text)] hover:underline">
+                      Regístrate
+                    </Link>
+                  </p>
                 </form>
               </CardContent>
             </Card>

@@ -38,6 +38,7 @@ import {
   Star,
   Send,
   Save,
+  Loader2,
   MessageSquare,
   ChevronDown,
   ChevronUp
@@ -225,12 +226,16 @@ const estadoConfig = {
 
 // Vista de evaluación para el Profesor - Solo rúbrica final
 function ProfesorEvaluacionPage() {
+  const { user } = useAuth()
   const [selectedEquipo, setSelectedEquipo] = useState<typeof equiposParaEvaluar[0] | null>(null)
   const [isEvaluationOpen, setIsEvaluationOpen] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState<number[]>([1, 2, 3, 4])
   const [puntajes, setPuntajes] = useState<Record<number, number>>({})
   const [observaciones, setObservaciones] = useState<Record<number, string>>({})
   const [evaluationStatus, setEvaluationStatus] = useState<"draft" | "saved" | "submitted">("draft")
+  const [isSubmittingEvaluation, setIsSubmittingEvaluation] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState("")
+  const [submitError, setSubmitError] = useState("")
   const [retroalimentacion, setRetroalimentacion] = useState({
     fortalezas: "",
     mejoras: "",
@@ -277,7 +282,62 @@ function ProfesorEvaluacionPage() {
     setObservaciones({})
     setRetroalimentacion({ fortalezas: "", mejoras: "", recomendaciones: "" })
     setEvaluationStatus("draft")
+    setSubmitMessage("")
+    setSubmitError("")
     setIsEvaluationOpen(true)
+  }
+
+  const submitEvaluation = async () => {
+    if (!selectedEquipo || !canSubmit) return
+
+    setIsSubmittingEvaluation(true)
+    setSubmitMessage("")
+    setSubmitError("")
+
+    try {
+      const criterios = rubricaGlobalPI.categorias.flatMap((categoria) =>
+        categoria.criterios.map((criterio) => ({
+          criterioId: String(criterio.id),
+          puntuacion: puntajes[criterio.id] ?? 0,
+        })),
+      )
+      const observacionGeneral = [
+        `Fortalezas: ${retroalimentacion.fortalezas}`,
+        retroalimentacion.mejoras ? `Areas de mejora: ${retroalimentacion.mejoras}` : "",
+        retroalimentacion.recomendaciones ? `Recomendaciones: ${retroalimentacion.recomendaciones}` : "",
+        ...rubricaGlobalPI.categorias.flatMap((categoria) =>
+          categoria.criterios
+            .filter((criterio) => observaciones[criterio.id])
+            .map((criterio) => `${criterio.nombre}: ${observaciones[criterio.id]}`),
+        ),
+      ].filter(Boolean).join("\n")
+
+      const response = await authFetch("/api/evaluaciones", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          equipoId: String(selectedEquipo.id),
+          rubricaId: "rubrica-global-pi",
+          docenteId: user?.id ?? user?.email ?? "profesor",
+          observaciones: observacionGeneral,
+          criterios,
+        }),
+      })
+      const data = (await response.json()) as { message?: string }
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "No se pudo enviar la evaluacion")
+      }
+
+      setEvaluationStatus("submitted")
+      setSubmitMessage(data.message ?? "Evaluacion enviada correctamente")
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "No se pudo enviar la evaluacion")
+    } finally {
+      setIsSubmittingEvaluation(false)
+    }
   }
 
   const totales = calcularTotalGeneral()
@@ -624,6 +684,10 @@ function ProfesorEvaluacionPage() {
             </Tabs>
 
             <DialogFooter className="mt-6 gap-2">
+              <div className="mr-auto min-h-6 text-sm">
+                {submitMessage && <span className="text-emerald-700">{submitMessage}</span>}
+                {submitError && <span className="text-red-600">{submitError}</span>}
+              </div>
               <Button variant="outline" onClick={() => setIsEvaluationOpen(false)}>
                 Cancelar
               </Button>
@@ -631,8 +695,8 @@ function ProfesorEvaluacionPage() {
                 <Save className="h-4 w-4" />
                 Guardar Borrador
               </Button>
-              <Button className="gap-2" disabled={!canSubmit} onClick={() => setEvaluationStatus("submitted")}>
-                <Send className="h-4 w-4" />
+              <Button className="gap-2" disabled={!canSubmit || isSubmittingEvaluation} onClick={submitEvaluation}>
+                {isSubmittingEvaluation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 Enviar Evaluación
               </Button>
             </DialogFooter>
@@ -842,4 +906,20 @@ export default function EvaluacionesPage() {
 
   // Coordinadora ve la vista completa de supervisión
   return <CoordinadoraEvaluacionPage />
+}
+
+const AUTH_TOKEN_STORAGE_KEY = "sigep_token"
+
+function authFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const token = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  const headers = new Headers(init.headers)
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`)
+  }
+
+  return fetch(input, {
+    ...init,
+    headers,
+  })
 }
