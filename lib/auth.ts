@@ -7,7 +7,6 @@ import type { AuthUser, JwtPayload, Role } from "@/lib/types/auth"
 const JWT_EXPIRES_IN: SignOptions["expiresIn"] =
   (process.env.JWT_EXPIRES_IN as SignOptions["expiresIn"]) || "7d"
 const BCRYPT_ROUNDS = 12
-const DEVELOPMENT_JWT_SECRET = "development-only-auth-secret"
 
 export function getConfiguredJwtSecret(): string {
   const configuredSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET
@@ -16,7 +15,7 @@ export function getConfiguredJwtSecret(): string {
     return configuredSecret
   }
 
-  return process.env.NODE_ENV !== "production" ? DEVELOPMENT_JWT_SECRET : ""
+  return ""
 }
 
 export function getJwtSecret(): string {

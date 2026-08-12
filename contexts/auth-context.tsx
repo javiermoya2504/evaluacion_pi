@@ -26,6 +26,7 @@ export interface User {
 
 interface AuthContextType {
   user: User | null
+  token: string | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
@@ -161,14 +162,6 @@ function AuthStateProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const demoUser = demoUsers[email.toLowerCase()]
-
-      if (demoUser && demoUser.password === password) {
-        const userWithoutPassword = removePassword(demoUser)
-        setStoredSession(userWithoutPassword, "")
-        return true
-      }
-
       return false
     } catch {
       return false
@@ -196,6 +189,7 @@ function AuthStateProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        token: getStoredAuthToken(),
         isLoading,
         login,
         logout,
@@ -257,6 +251,11 @@ function subscribeToStoredUser(onChange: () => void) {
 
 function getStoredUserValue() {
   return localStorage.getItem(AUTH_STORAGE_KEY)
+}
+
+export function getStoredAuthToken() {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
 }
 
 function parseStoredUser(value: string | null): User | null {

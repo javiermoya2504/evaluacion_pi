@@ -23,7 +23,7 @@ async function ensureUsersFile(): Promise<void> {
 
 async function readUsers(): Promise<StoredUser[]> {
   await ensureUsersFile()
-  const content = await fs.readFile(USERS_FILE, "utf-8")
+  const content = (await fs.readFile(USERS_FILE, "utf-8")).replace(/^\uFEFF/, "")
   const users = JSON.parse(content) as StoredUser[]
   return Array.isArray(users) ? users : []
 }

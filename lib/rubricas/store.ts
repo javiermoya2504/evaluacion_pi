@@ -30,7 +30,7 @@ async function ensureRubricasFile(): Promise<void> {
 
 async function readRubricas(): Promise<Rubrica[]> {
   await ensureRubricasFile()
-  const content = await fs.readFile(RUBRICAS_FILE, "utf-8")
+  const content = (await fs.readFile(RUBRICAS_FILE, "utf-8")).replace(/^\uFEFF/, "")
   const rubricas = JSON.parse(content) as Rubrica[]
   return Array.isArray(rubricas) ? rubricas : []
 }
