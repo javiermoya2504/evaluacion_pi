@@ -106,12 +106,12 @@ export default function RegisterPage() {
           </div>
 
           <div className="relative z-10 max-w-2xl space-y-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-100">Registro público</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-teal-100">Registro institucional</p>
             <h1 className="max-w-xl text-5xl font-semibold leading-tight tracking-tight">
-              Crea tu acceso de alumno a SIGEP-PI.
+              Crea tu acceso a SIGEP-PI con el perfil adecuado.
             </h1>
             <p className="max-w-lg text-base leading-7 text-teal-50/75">
-              Tu cuenta se crea con permisos de alumno para ingresar al panel sin exponer roles administrativos.
+              El rol seleccionado determina los módulos y acciones disponibles dentro del sistema.
             </p>
           </div>
 
@@ -141,7 +141,7 @@ export default function RegisterPage() {
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--register-primary)]">Acceso institucional</p>
               <h2 className="text-3xl font-semibold tracking-tight text-slate-950">Regístrate</h2>
               <p className="text-sm leading-6 text-slate-600">
-                Completa tus datos para crear una cuenta de alumno.
+                Completa tus datos y selecciona el rol que desempeñarás.
               </p>
             </div>
 
