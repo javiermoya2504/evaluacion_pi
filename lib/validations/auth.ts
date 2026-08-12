@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { REGISTER_ROLES } from "../types/auth"
 export const registerSchema = z.object({
   email: z
     .string()
@@ -15,6 +16,7 @@ export const registerSchema = z.object({
     .trim()
     .min(2, "El nombre debe tener al menos 2 caracteres")
     .max(100, "El nombre no puede exceder 100 caracteres"),
+  rol: z.enum(REGISTER_ROLES),
 })
 
 export const loginSchema = z.object({

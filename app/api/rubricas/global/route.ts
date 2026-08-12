@@ -8,7 +8,7 @@ import { createRubricaSchema } from "@/lib/validations/rubrica"
 
 import type { Role } from "@/lib/types/auth"
 
-const WRITE_ROLES: Role[] = ["admin", "profesor"]
+const WRITE_ROLES: Role[] = ["coordinadora_pi", "jefe_asignatura"]
 
 export const GET = withAuth(async () => {
   try {

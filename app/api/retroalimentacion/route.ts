@@ -6,7 +6,7 @@ import { createRetroalimentacion, getAllRetroalimentaciones } from "@/lib/retroa
 import { createRetroalimentacionSchema } from "@/lib/validations/retroalimentacion"
 import type { Role } from "@/lib/types/auth"
 
-const WRITE_ROLES: Role[] = ["admin", "profesor"]
+const WRITE_ROLES: Role[] = ["coordinadora_pi", "profesor"]
 
 export const GET = withAuth(async () => {
   try {

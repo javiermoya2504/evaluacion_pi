@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth"
 import { findUserByEmail, toPublicUser } from "@/lib/users/store"
 import { loginSchema } from "@/lib/validations/auth"
+import { authenticateDemoUser } from "@/lib/demo-auth"
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +27,10 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = parsed.data
+    const demoUser = authenticateDemoUser(email, password)
+    if (demoUser) {
+      return jsonResponse({ success: true, message: "Inicio de sesiÃ³n exitoso", user: demoUser, token: signToken(demoUser) })
+    }
     const storedUser = await findUserByEmail(email)
 
     if (!storedUser) {

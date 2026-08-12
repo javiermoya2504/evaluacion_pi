@@ -1,36 +1,11 @@
 import { randomUUID } from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
+import { ensureAuthSchema, getSql } from "@/lib/db"
 import type { AuthUser, Role, StoredUser } from "@/lib/types/auth"
 
-const USERS_FILE = path.join(process.cwd(), "data", "users.json")
+type UserRow = { id: string; email: string; nombre: string; rol: Role; password_hash: string; created_at: string | Date }
 
-async function ensureUsersFile(): Promise<void> {
-  const dir = path.dirname(USERS_FILE)
-
-  try {
-    await fs.access(dir)
-  } catch {
-    await fs.mkdir(dir, { recursive: true })
-  }
-
-  try {
-    await fs.access(USERS_FILE)
-  } catch {
-    await fs.writeFile(USERS_FILE, JSON.stringify([], null, 2), "utf-8")
-  }
-}
-
-async function readUsers(): Promise<StoredUser[]> {
-  await ensureUsersFile()
-  const content = await fs.readFile(USERS_FILE, "utf-8")
-  const users = JSON.parse(content) as StoredUser[]
-  return Array.isArray(users) ? users : []
-}
-
-async function writeUsers(users: StoredUser[]): Promise<void> {
-  await ensureUsersFile()
-  await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), "utf-8")
+function fromRow(row: UserRow): StoredUser {
+  return { id: row.id, email: row.email, nombre: row.nombre, rol: row.rol, passwordHash: row.password_hash, createdAt: new Date(row.created_at).toISOString() }
 }
 
 export function toPublicUser(user: StoredUser): AuthUser {
@@ -40,20 +15,21 @@ export function toPublicUser(user: StoredUser): AuthUser {
 }
 
 export async function findUserByEmail(email: string): Promise<StoredUser | null> {
-  const users = await readUsers()
-  return users.find((user) => user.email === email.toLowerCase()) ?? null
+  await ensureAuthSchema()
+  const rows = await getSql()`SELECT * FROM app_user WHERE email = ${email.toLowerCase()} LIMIT 1`
+  return rows[0] ? fromRow(rows[0] as UserRow) : null
 }
 
 export async function getAllUsers(): Promise<AuthUser[]> {
-  const users = await readUsers()
-  return users
-    .sort((a, b) => a.nombre.localeCompare(b.nombre))
-    .map((user) => toPublicUser(user))
+  await ensureAuthSchema()
+  const rows = await getSql()`SELECT * FROM app_user ORDER BY nombre`
+  return rows.map((row) => toPublicUser(fromRow(row as UserRow)))
 }
 
 export async function findUserById(id: string): Promise<StoredUser | null> {
-  const users = await readUsers()
-  return users.find((user) => user.id === id) ?? null
+  await ensureAuthSchema()
+  const rows = await getSql()`SELECT * FROM app_user WHERE id = ${id} LIMIT 1`
+  return rows[0] ? fromRow(rows[0] as UserRow) : null
 }
 
 export async function createUser(input: {
@@ -62,24 +38,15 @@ export async function createUser(input: {
   rol: Role
   passwordHash: string
 }): Promise<AuthUser> {
-  const users = await readUsers()
+  await ensureAuthSchema()
+  const sql = getSql()
   const email = input.email.toLowerCase()
-
-  if (users.some((user) => user.email === email)) {
-    throw new Error("EMAIL_ALREADY_EXISTS")
+  try {
+    const rows = await sql`INSERT INTO app_user (id, email, nombre, rol, password_hash)
+      VALUES (${randomUUID()}, ${email}, ${input.nombre}, ${input.rol}, ${input.passwordHash}) RETURNING *`
+    return toPublicUser(fromRow(rows[0] as UserRow))
+  } catch (error) {
+    if (error instanceof Error && /unique|duplicate/i.test(error.message)) throw new Error("EMAIL_ALREADY_EXISTS")
+    throw error
   }
-
-  const newUser: StoredUser = {
-    id: randomUUID(),
-    email,
-    nombre: input.nombre,
-    rol: input.rol,
-    passwordHash: input.passwordHash,
-    createdAt: new Date().toISOString(),
-  }
-
-  users.push(newUser)
-  await writeUsers(users)
-
-  return toPublicUser(newUser)
 }

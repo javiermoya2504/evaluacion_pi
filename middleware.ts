@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { verifyToken } from "@/lib/auth"
-import type { Role } from "@/lib/types/auth"
 
 const API_RATE_LIMIT_WINDOW_MS = 60_000
 const API_RATE_LIMIT_MAX_REQUESTS = 100
@@ -15,11 +13,6 @@ const PUBLIC_API_ROUTES = [
   "/api/auth/",
 ]
 
-const ROLE_PROTECTED_ROUTES: Record<string, Role[]> = {
-  "/api/admin": ["admin"],
-  "/api/profesor": ["admin", "profesor"],
-  "/api/alumno": ["admin", "profesor", "alumno"],
-}
 
 type RateLimitEntry = {
   count: number
@@ -35,13 +28,6 @@ type RateLimitResult = {
 }
 
 const rateLimitStore = new Map<string, RateLimitEntry>()
-
-function getBearerToken(request: NextRequest): string | null {
-  const authorization = request.headers.get("authorization")
-  if (!authorization?.startsWith("Bearer ")) return null
-  const token = authorization.slice(7).trim()
-  return token.length > 0 ? token : null
-}
 
 function getClientIp(request: NextRequest): string {
   const forwardedFor = request.headers.get("x-forwarded-for")
@@ -61,14 +47,6 @@ function isPublicApiRoute(pathname: string): boolean {
   return PUBLIC_API_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   )
-}
-
-function getRequiredRoles(pathname: string): Role[] | null {
-  const matchedRoute = Object.keys(ROLE_PROTECTED_ROUTES).find((route) =>
-    pathname.startsWith(route),
-  )
-
-  return matchedRoute ? ROLE_PROTECTED_ROUTES[matchedRoute] : null
 }
 
 function getApiRateLimit(pathname: string): number {
@@ -173,59 +151,7 @@ export function middleware(request: NextRequest) {
     return withRateLimitHeaders(NextResponse.next(), rateLimit)
   }
 
-  const requiredRoles = getRequiredRoles(pathname)
-
-  if (!requiredRoles) {
-    return withRateLimitHeaders(NextResponse.next(), rateLimit)
-  }
-
-  const token = getBearerToken(request)
-
-  if (!token) {
-    return withRateLimitHeaders(
-      NextResponse.json(
-        { success: false, message: "Token invalido o ausente" },
-        { status: 401 },
-      ),
-      rateLimit,
-    )
-  }
-
-  const payload = verifyToken(token)
-
-  if (!payload) {
-    return withRateLimitHeaders(
-      NextResponse.json(
-        { success: false, message: "Token invalido o expirado" },
-        { status: 401 },
-      ),
-      rateLimit,
-    )
-  }
-
-  if (!requiredRoles.includes(payload.rol)) {
-    return withRateLimitHeaders(
-      NextResponse.json(
-        { success: false, message: "No tienes permisos para realizar esta accion" },
-        { status: 403 },
-      ),
-      rateLimit,
-    )
-  }
-
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set("x-user-id", payload.sub)
-  requestHeaders.set("x-user-role", payload.rol)
-  requestHeaders.set("x-user-email", payload.email)
-
-  return withRateLimitHeaders(
-    NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    }),
-    rateLimit,
-  )
+  return withRateLimitHeaders(NextResponse.next(), rateLimit)
 }
 
 export const config = {

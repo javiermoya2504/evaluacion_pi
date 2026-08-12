@@ -9,13 +9,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-type RegisterErrors = Partial<Record<"nombre" | "email" | "password" | "confirmPassword" | "general", string>>
+type RegisterRole = "coordinadora_pi" | "jefe_asignatura" | "profesor"
+type RegisterErrors = Partial<Record<"nombre" | "email" | "password" | "confirmPassword" | "rol" | "general", string>>
 
 export default function RegisterPage() {
   const [nombre, setNombre] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [rol, setRol] = useState<RegisterRole>("profesor")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<RegisterErrors>({})
@@ -24,7 +26,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    const validationErrors = validateForm({ nombre, email, password, confirmPassword })
+    const validationErrors = validateForm({ nombre, email, password, confirmPassword, rol })
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
@@ -44,6 +46,7 @@ export default function RegisterPage() {
           nombre,
           email,
           password,
+          rol,
         }),
       })
 
@@ -176,6 +179,14 @@ export default function RegisterPage() {
                         required
                       />
                     </div>
+                  </FieldError>
+
+                  <FieldError id="rol" label="Tipo de rol" error={errors.rol}>
+                    <select id="rol" value={rol} onChange={(event) => setRol(event.target.value as RegisterRole)} className="h-11 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--register-primary)]" disabled={isSubmitting} required>
+                      <option value="coordinadora_pi">Coordinadora PI</option>
+                      <option value="jefe_asignatura">Jefe de asignatura</option>
+                      <option value="profesor">Profesor evaluador</option>
+                    </select>
                   </FieldError>
 
                   <PasswordField
@@ -314,6 +325,7 @@ function validateForm(input: {
   email: string
   password: string
   confirmPassword: string
+  rol: RegisterRole
 }): RegisterErrors {
   const errors: RegisterErrors = {}
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

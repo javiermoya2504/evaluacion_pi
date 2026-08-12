@@ -8,7 +8,7 @@ import { createEquipoSchema, updateEquipoSchema } from "@/lib/validations/equipo
 
 import type { Role } from "@/lib/types/auth"
 
-const WRITE_ROLES: Role[] = ["admin", "profesor"]
+const WRITE_ROLES: Role[] = ["coordinadora_pi"]
 
 export const GET = withAuth(async () => {
   try {

@@ -11,7 +11,7 @@ import {
 import { createEvaluacionSchema, updateEvaluacionSchema } from "@/lib/validations/evaluacion"
 import type { Role } from "@/lib/types/auth"
 
-const WRITE_ROLES: Role[] = ["admin", "profesor"]
+const WRITE_ROLES: Role[] = ["coordinadora_pi", "profesor"]
 
 export const GET = withAuth(async () => {
   try {

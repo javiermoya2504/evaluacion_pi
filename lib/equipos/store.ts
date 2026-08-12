@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
+import { readCollection, writeCollection } from "@/lib/db"
 import { cacheLife, cacheTag } from "next/cache"
 import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import { getMateriaById } from "@/lib/materias/store"
@@ -10,8 +9,6 @@ import type {
   UpdateEquipoInput,
 } from "@/lib/validations/equipo"
 import { findUserById, toPublicUser } from "@/lib/users/store"
-
-const EQUIPOS_FILE = path.join(process.cwd(), "data", "equipos.json")
 
 const SEED_EQUIPOS: Equipo[] = [
   {
@@ -28,32 +25,12 @@ const SEED_EQUIPOS: Equipo[] = [
   },
 ]
 
-async function ensureEquiposFile(): Promise<void> {
-  const dir = path.dirname(EQUIPOS_FILE)
-
-  try {
-    await fs.access(dir)
-  } catch {
-    await fs.mkdir(dir, { recursive: true })
-  }
-
-  try {
-    await fs.access(EQUIPOS_FILE)
-  } catch {
-    await fs.writeFile(EQUIPOS_FILE, JSON.stringify(SEED_EQUIPOS, null, 2), "utf-8")
-  }
-}
-
 async function readEquipos(): Promise<Equipo[]> {
-  await ensureEquiposFile()
-  const content = await fs.readFile(EQUIPOS_FILE, "utf-8")
-  const equipos = JSON.parse(content) as Equipo[]
-  return Array.isArray(equipos) ? equipos : []
+  return readCollection("equipos", SEED_EQUIPOS)
 }
 
 async function writeEquipos(equipos: Equipo[]): Promise<void> {
-  await ensureEquiposFile()
-  await fs.writeFile(EQUIPOS_FILE, JSON.stringify(equipos, null, 2), "utf-8")
+  await writeCollection("equipos", equipos)
 }
 
 async function validateMateria(materiaId: string): Promise<void> {

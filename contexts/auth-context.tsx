@@ -161,14 +161,6 @@ function AuthStateProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const demoUser = demoUsers[email.toLowerCase()]
-
-      if (demoUser && demoUser.password === password) {
-        const userWithoutPassword = removePassword(demoUser)
-        setStoredSession(userWithoutPassword, "")
-        return true
-      }
-
       return false
     } catch {
       return false

@@ -12,7 +12,7 @@ import { updateMateriaSchema } from "@/lib/validations/materia"
 
 import type { Role } from "@/lib/types/auth"
 
-const WRITE_ROLES: Role[] = ["admin", "profesor"]
+const WRITE_ROLES: Role[] = ["coordinadora_pi", "jefe_asignatura"]
 
 type RouteContext = { params: Promise<{ id: string }> }
 

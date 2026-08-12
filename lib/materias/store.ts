@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
+import { readCollection, writeCollection } from "@/lib/db"
 import { cacheLife, cacheTag } from "next/cache"
 import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import type { Materia } from "@/lib/types/materia"
@@ -8,8 +7,6 @@ import type {
   CreateMateriaInput,
   UpdateMateriaInput,
 } from "@/lib/validations/materia"
-
-const MATERIAS_FILE = path.join(process.cwd(), "data", "materias.json")
 
 const SEED_MATERIAS: Materia[] = [
   {
@@ -56,32 +53,12 @@ const SEED_MATERIAS: Materia[] = [
   },
 ]
 
-async function ensureMateriasFile(): Promise<void> {
-  const dir = path.dirname(MATERIAS_FILE)
-
-  try {
-    await fs.access(dir)
-  } catch {
-    await fs.mkdir(dir, { recursive: true })
-  }
-
-  try {
-    await fs.access(MATERIAS_FILE)
-  } catch {
-    await fs.writeFile(MATERIAS_FILE, JSON.stringify(SEED_MATERIAS, null, 2), "utf-8")
-  }
-}
-
 async function readMaterias(): Promise<Materia[]> {
-  await ensureMateriasFile()
-  const content = await fs.readFile(MATERIAS_FILE, "utf-8")
-  const materias = JSON.parse(content) as Materia[]
-  return Array.isArray(materias) ? materias : []
+  return readCollection("materias", SEED_MATERIAS)
 }
 
 async function writeMaterias(materias: Materia[]): Promise<void> {
-  await ensureMateriasFile()
-  await fs.writeFile(MATERIAS_FILE, JSON.stringify(materias, null, 2), "utf-8")
+  await writeCollection("materias", materias)
 }
 
 export async function getAllMaterias(): Promise<Materia[]> {
