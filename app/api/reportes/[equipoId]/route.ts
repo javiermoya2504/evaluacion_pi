@@ -3,7 +3,7 @@ import { withRoles } from "@/lib/middleware/role"
 import { getReporteEquipo } from "@/lib/reportes/store"
 import type { Role } from "@/lib/types/auth"
 
-const READ_ROLES: Role[] = ["admin", "profesor"]
+const READ_ROLES: Role[] = ["admin", "profesor", "coordinadora_pi"]
 
 export const GET = withRoles(READ_ROLES, async (_request, { params }) => {
   try {

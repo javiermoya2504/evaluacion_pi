@@ -1,14 +1,13 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
   TrendingUp, 
   TrendingDown,
   Users,
   ClipboardList,
   FileCheck,
-  BookOpen,
-  ArrowUpRight
+  BookOpen
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 

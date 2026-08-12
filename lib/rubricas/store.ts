@@ -5,8 +5,26 @@ import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import type { Rubrica } from "@/lib/types/rubrica"
 import type { CreateRubricaInput } from "@/lib/validations/rubrica"
 
+const DEFAULT_RUBRICAS: Rubrica[] = [{
+  id: "rubrica-global-pi",
+  nombre: "Rubrica global PI",
+  descripcion: "Evaluacion integral del proyecto",
+  criterios: [
+    { nombre: "Solucion tecnica", porcentaje: 30 },
+    { nombre: "Funcionalidad", porcentaje: 30 },
+    { nombre: "Documentacion", porcentaje: 20 },
+    { nombre: "Presentacion", porcentaje: 20 },
+  ],
+  totalPorcentaje: 100,
+  createdAt: "2026-05-01T00:00:00.000Z",
+}]
+
 async function readRubricas(): Promise<Rubrica[]> {
-  return readCollection("rubricas", [])
+  const rubricas = await readCollection("rubricas", DEFAULT_RUBRICAS)
+  if (rubricas.length > 0) return rubricas
+
+  await writeCollection("rubricas", DEFAULT_RUBRICAS)
+  return structuredClone(DEFAULT_RUBRICAS)
 }
 
 async function writeRubricas(rubricas: Rubrica[]): Promise<void> {
