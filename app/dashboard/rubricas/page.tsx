@@ -49,7 +49,7 @@ export default function RubricasPage() {
   const [error, setError] = useState("")
 
   const canManageRubricas = user?.rol === "admin" || user?.rol === "profesor" || user?.rol === "coordinadora_pi" || user?.rol === "jefe_asignatura"
-  const canPersistRubricas = user?.rol === "admin" || user?.rol === "profesor"
+  const canPersistRubricas = user?.rol === "coordinadora_pi" || user?.rol === "jefe_asignatura"
   const totalWeight = useMemo(
     () => criterios.reduce((sum, criterio) => sum + Number(criterio.porcentaje || 0), 0),
     [criterios],
@@ -126,7 +126,7 @@ export default function RubricasPage() {
 
   async function saveRubrica(nextStatus: "saved" | "published") {
     if (!canPersistRubricas) {
-      setError("Tu rol puede ver la pantalla, pero no tiene token backend admin/profesor para guardar rubricas")
+      setError("Tu rol tiene acceso de consulta; solo Coordinacion PI y Jefatura de asignatura pueden guardar rubricas")
       return
     }
 
@@ -185,7 +185,7 @@ export default function RubricasPage() {
   return (
     <div className="flex flex-col">
       <DashboardHeader
-        title={user?.rol === "profesor" ? "Rubrica de profesor" : "Rubrica global institucional"}
+        title={user?.rol === "profesor" ? "Consulta de rubricas" : "Rubrica global institucional"}
         description="Configuracion conectada a GET/POST /api/rubricas/global"
       />
 
@@ -230,11 +230,11 @@ export default function RubricasPage() {
                     : `La ponderacion excede por ${totalWeight - 100}%.`}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => saveRubrica("saved")} disabled={isSaving || totalWeight !== 100}>
+                <Button variant="outline" className="flex-1" onClick={() => saveRubrica("saved")} disabled={!canPersistRubricas || isSaving || totalWeight !== 100}>
                   {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   Guardar
                 </Button>
-                <Button className="flex-1" disabled={isSaving || totalWeight !== 100} onClick={() => saveRubrica("published")}>
+                <Button className="flex-1" disabled={!canPersistRubricas || isSaving || totalWeight !== 100} onClick={() => saveRubrica("published")}>
                   {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Publicar
                 </Button>
@@ -254,7 +254,7 @@ export default function RubricasPage() {
                   <CardTitle>Editor de criterios</CardTitle>
                   <CardDescription>Contrato: nombre, descripcion y criterios con porcentaje</CardDescription>
                 </div>
-                <Button type="button" variant="outline" onClick={addCriterio}>
+                <Button type="button" variant="outline" onClick={addCriterio} disabled={!canPersistRubricas}>
                   <Plus className="mr-2 h-4 w-4" />
                   Agregar criterio
                 </Button>
@@ -264,11 +264,11 @@ export default function RubricasPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="rubrica-nombre">Nombre</Label>
-                  <Input id="rubrica-nombre" value={nombre} onChange={(event) => { setStatus("draft"); setNombre(event.target.value) }} />
+                  <Input id="rubrica-nombre" value={nombre} disabled={!canPersistRubricas} onChange={(event) => { setStatus("draft"); setNombre(event.target.value) }} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="rubrica-descripcion">Descripcion</Label>
-                  <Input id="rubrica-descripcion" value={descripcion} onChange={(event) => { setStatus("draft"); setDescripcion(event.target.value) }} />
+                  <Input id="rubrica-descripcion" value={descripcion} disabled={!canPersistRubricas} onChange={(event) => { setStatus("draft"); setDescripcion(event.target.value) }} />
                 </div>
               </div>
 
@@ -282,6 +282,7 @@ export default function RubricasPage() {
                       <Input
                         id={`criterio-${index}`}
                         value={criterio.nombre}
+                        disabled={!canPersistRubricas}
                         onChange={(event) => updateCriterio(index, "nombre", event.target.value)}
                         placeholder="Nombre del criterio"
                       />
@@ -294,10 +295,11 @@ export default function RubricasPage() {
                         min={0}
                         max={100}
                         value={criterio.porcentaje}
+                        disabled={!canPersistRubricas}
                         onChange={(event) => updateCriterio(index, "porcentaje", event.target.value)}
                       />
                     </div>
-                    <Button type="button" variant="outline" size="icon" onClick={() => removeCriterio(index)} disabled={criterios.length === 1}>
+                    <Button type="button" variant="outline" size="icon" onClick={() => removeCriterio(index)} disabled={!canPersistRubricas || criterios.length === 1}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
