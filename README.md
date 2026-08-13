@@ -10,7 +10,14 @@
 - [Sprint 6 - Seguridad API y headers](docs/sprint-6-security.md)
 - [Sprint 7 - Monitoreo y release](docs/sprint-7-monitoring-release.md)
 - [Sprint 8 - Performance y cache](docs/sprint-8-performance.md)
+- [Sprint 10 - Documentacion, performance y release](docs/sprint-10-release.md)
 - [Sprint 9 - Email y worker BullMQ](docs/sprint-9-email-worker.md)
+- [Sprint 11 - Checklist final de seguridad](docs/sprint-11-security-checklist.md)
+- [Runbook de incidencias v1](docs/runbook-incidents-v1.md)
+- [Sprint 12 - Cierre de infraestructura y release v1.0.0](docs/sprint-12-release.md)
+- [README de infraestructura](docs/infrastructure-readme.md)
+- [Guia de despliegue en Vercel desde cero](docs/deployment-vercel-from-zero.md)
+- [Runbook de incidencias v2](docs/runbook-incidents-v2.md)
 - CI base en `.github/workflows/ci.yml` para validar lint, TypeScript y el
   test suite y build en cada pull request y en los pushes a `feature`, `dev` y
   `main`.

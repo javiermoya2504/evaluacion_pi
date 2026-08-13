@@ -41,7 +41,7 @@ export default function RubricasPage() {
   const [descripcion, setDescripcion] = useState("Criterios configurados para la evaluacion del Proyecto Integrador.")
   const [criterios, setCriterios] = useState<CriterioRubrica[]>(defaultCriteria)
   const [status, setStatus] = useState<"draft" | "saved" | "published">("draft")
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
@@ -89,7 +89,7 @@ export default function RubricasPage() {
     if (!token) return
 
     const timer = window.setTimeout(() => {
-      loadRubricas()
+      void loadRubricas()
     }, 0)
 
     return () => window.clearTimeout(timer)
@@ -152,6 +152,7 @@ export default function RubricasPage() {
           porcentaje: Number(criterio.porcentaje),
         })),
       }
+
       const response = await authFetch(token, "/api/rubricas/global", {
         method: "POST",
         headers: {
