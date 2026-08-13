@@ -1,43 +1,21 @@
 import { randomUUID } from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
 import { cacheLife, cacheTag } from "next/cache"
 import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import type { Rubrica } from "@/lib/types/rubrica"
 import type { CreateRubricaInput } from "@/lib/validations/rubrica"
+import { getStorageAdapter } from "@/lib/storage/adapter"
 
-const RUBRICAS_FILE = path.join(
-  process.cwd(),
-  "data",
-  "rubricas_globales.json",
-)
-
-async function ensureRubricasFile(): Promise<void> {
-  const dir = path.dirname(RUBRICAS_FILE)
-
-  try {
-    await fs.access(dir)
-  } catch {
-    await fs.mkdir(dir, { recursive: true })
-  }
-
-  try {
-    await fs.access(RUBRICAS_FILE)
-  } catch {
-    await fs.writeFile(RUBRICAS_FILE, JSON.stringify([], null, 2), "utf-8")
-  }
-}
+const RUBRICAS_KEY = "rubricas:all"
 
 async function readRubricas(): Promise<Rubrica[]> {
-  await ensureRubricasFile()
-  const content = await fs.readFile(RUBRICAS_FILE, "utf-8")
-  const rubricas = JSON.parse(content) as Rubrica[]
+  const storage = getStorageAdapter()
+  const rubricas = await storage.get<Rubrica[]>(RUBRICAS_KEY)
   return Array.isArray(rubricas) ? rubricas : []
 }
 
 async function writeRubricas(rubricas: Rubrica[]): Promise<void> {
-  await ensureRubricasFile()
-  await fs.writeFile(RUBRICAS_FILE, JSON.stringify(rubricas, null, 2), "utf-8")
+  const storage = getStorageAdapter()
+  await storage.set<Rubrica[]>(RUBRICAS_KEY, rubricas)
 }
 
 export async function getAllRubricas(): Promise<Rubrica[]> {

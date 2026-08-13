@@ -26,8 +26,6 @@ type Rubrica = {
   createdAt: string
 }
 
-const AUTH_TOKEN_STORAGE_KEY = "sigep_token"
-
 const defaultCriteria: CriterioRubrica[] = [
   { nombre: "Arquitectura del sistema", porcentaje: 20 },
   { nombre: "Requerimientos funcionales", porcentaje: 20 },
@@ -37,7 +35,7 @@ const defaultCriteria: CriterioRubrica[] = [
 ]
 
 export default function RubricasPage() {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [rubricas, setRubricas] = useState<Rubrica[]>([])
   const [nombre, setNombre] = useState("Rubrica PI")
   const [descripcion, setDescripcion] = useState("Criterios configurados para la evaluacion del Proyecto Integrador.")
@@ -50,6 +48,10 @@ export default function RubricasPage() {
 
   const canManageRubricas = user?.rol === "admin" || user?.rol === "profesor" || user?.rol === "coordinadora_pi" || user?.rol === "jefe_asignatura"
   const canPersistRubricas = user?.rol === "admin" || user?.rol === "profesor"
+  const authError = canManageRubricas && !token
+    ? "No hay token de sesion backend. Inicia sesion nuevamente con una cuenta valida."
+    : ""
+  const visibleError = authError || error
   const totalWeight = useMemo(
     () => criterios.reduce((sum, criterio) => sum + Number(criterio.porcentaje || 0), 0),
     [criterios],
@@ -60,7 +62,7 @@ export default function RubricasPage() {
     setError("")
 
     try {
-      const response = await authFetch("/api/rubricas/global")
+      const response = await authFetch(token, "/api/rubricas/global")
       const data = (await response.json()) as { rubricas?: Rubrica[]; message?: string }
 
       if (!response.ok || !data.rubricas) {
@@ -77,19 +79,21 @@ export default function RubricasPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [token])
 
   useEffect(() => {
     if (!canManageRubricas) {
       return
     }
 
+    if (!token) return
+
     const timer = window.setTimeout(() => {
-      loadRubricas()
+      void loadRubricas()
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [canManageRubricas, loadRubricas])
+  }, [canManageRubricas, loadRubricas, token])
 
   function loadRubricaIntoForm(rubrica: Rubrica) {
     setNombre(rubrica.nombre)
@@ -126,7 +130,12 @@ export default function RubricasPage() {
 
   async function saveRubrica(nextStatus: "saved" | "published") {
     if (!canPersistRubricas) {
-      setError("Tu rol puede ver la pantalla, pero no tiene token backend admin/profesor para guardar rubricas")
+      setError("Tu rol puede ver la pantalla, pero no tiene permisos admin/profesor para guardar rubricas")
+      return
+    }
+
+    if (!token) {
+      setError("No hay token de sesion backend. Inicia sesion nuevamente con una cuenta valida.")
       return
     }
 
@@ -143,7 +152,8 @@ export default function RubricasPage() {
           porcentaje: Number(criterio.porcentaje),
         })),
       }
-      const response = await authFetch("/api/rubricas/global", {
+
+      const response = await authFetch(token, "/api/rubricas/global", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -244,7 +254,7 @@ export default function RubricasPage() {
         </section>
 
         {message && <StatusMessage tone="success" message={message} />}
-        {error && <StatusMessage tone="error" message={error} />}
+        {visibleError && <StatusMessage tone="error" message={visibleError} />}
 
         <div className="grid gap-6 xl:grid-cols-[1fr_0.85fr]">
           <Card className="border-none bg-white shadow-sm shadow-slate-200/70">
@@ -397,8 +407,7 @@ function StatusMessage({ tone, message }: { tone: "success" | "error"; message: 
   )
 }
 
-function authFetch(input: RequestInfo | URL, init: RequestInit = {}) {
-  const token = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+function authFetch(token: string | null, input: RequestInfo | URL, init: RequestInit = {}) {
   const headers = new Headers(init.headers)
 
   if (token) {

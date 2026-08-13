@@ -1,6 +1,4 @@
 import { randomUUID } from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
 import { cacheLife, cacheTag } from "next/cache"
 import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import type { Evaluacion } from "@/lib/types/evaluacion"
@@ -8,35 +6,19 @@ import type {
   CreateEvaluacionInput,
   UpdateEvaluacionInput,
 } from "@/lib/validations/evaluacion"
+import { getStorageAdapter } from "@/lib/storage/adapter"
 
-const EVALUACIONES_FILE = path.join(process.cwd(), "data", "evaluaciones.json")
-
-async function ensureEvaluacionesFile(): Promise<void> {
-  const dir = path.dirname(EVALUACIONES_FILE)
-
-  try {
-    await fs.access(dir)
-  } catch {
-    await fs.mkdir(dir, { recursive: true })
-  }
-
-  try {
-    await fs.access(EVALUACIONES_FILE)
-  } catch {
-    await fs.writeFile(EVALUACIONES_FILE, JSON.stringify([], null, 2), "utf-8")
-  }
-}
+const EVALUACIONES_KEY = "evaluaciones:all"
 
 async function readEvaluaciones(): Promise<Evaluacion[]> {
-  await ensureEvaluacionesFile()
-  const content = await fs.readFile(EVALUACIONES_FILE, "utf-8")
-  const evaluaciones = JSON.parse(content) as Evaluacion[]
+  const storage = getStorageAdapter()
+  const evaluaciones = await storage.get<Evaluacion[]>(EVALUACIONES_KEY)
   return Array.isArray(evaluaciones) ? evaluaciones : []
 }
 
 async function writeEvaluaciones(evaluaciones: Evaluacion[]): Promise<void> {
-  await ensureEvaluacionesFile()
-  await fs.writeFile(EVALUACIONES_FILE, JSON.stringify(evaluaciones, null, 2), "utf-8")
+  const storage = getStorageAdapter()
+  await storage.set<Evaluacion[]>(EVALUACIONES_KEY, evaluaciones)
 }
 
 export async function getAllEvaluaciones(): Promise<Evaluacion[]> {
