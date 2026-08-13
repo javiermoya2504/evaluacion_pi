@@ -193,7 +193,7 @@ export default function NotificacionesPage() {
           item.id === row.id ? { ...item, estado: "Enviado", fecha: new Date().toISOString() } : item,
         ),
       )
-      setMessage(data.message ?? "Correo encolado correctamente")
+      setMessage(data.message ?? "Correo enviado correctamente")
     } catch (sendError) {
       setPreparedRows((current) =>
         current.map((item) => (item.id === row.id ? { ...item, estado: "Fallido", fecha: new Date().toISOString() } : item)),
@@ -225,7 +225,7 @@ export default function NotificacionesPage() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <CardTitle>Envios finales</CardTitle>
-                  <CardDescription>Prepara correos desde equipos y reportes reales, luego encola por /api/email</CardDescription>
+                  <CardDescription>Prepara correos desde equipos y reportes reales, luego los envia por /api/email</CardDescription>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Select value={selectedEquipoId} onValueChange={setSelectedEquipoId} disabled={isLoading || equipos.length === 0}>

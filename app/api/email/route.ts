@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server"
 import { errorResponse, jsonResponse } from "@/lib/auth"
-import { enqueueEmail } from "@/lib/email/queue"
+import { sendEmail } from "@/lib/email/sender"
 import { withRoles } from "@/lib/middleware/role"
 import { createEmailSchema } from "@/lib/validations/email"
 import type { Role } from "@/lib/types/auth"
 
-const WRITE_ROLES: Role[] = ["admin", "profesor"]
+const WRITE_ROLES: Role[] = ["admin", "coordinadora_pi", "profesor"]
 
 export const POST = withRoles(WRITE_ROLES, async (request: NextRequest) => {
   try {
@@ -17,7 +17,7 @@ export const POST = withRoles(WRITE_ROLES, async (request: NextRequest) => {
       return errorResponse("Datos de correo inválidos", 400, errors)
     }
 
-    await enqueueEmail({
+    const result = await sendEmail({
       to: parsed.data.recipient,
       subject: parsed.data.subject,
       text: parsed.data.text,
@@ -29,7 +29,9 @@ export const POST = withRoles(WRITE_ROLES, async (request: NextRequest) => {
 
     return jsonResponse({
       success: true,
-      message: "Correo encolado correctamente",
+      message: "Correo enviado correctamente",
+      provider: result.provider,
+      messageId: result.messageId,
     })
   } catch (error) {
     console.error("[POST /api/email]", error)

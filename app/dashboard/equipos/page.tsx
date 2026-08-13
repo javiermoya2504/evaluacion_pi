@@ -58,7 +58,7 @@ export default function EquiposPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [editingEquipo, setEditingEquipo] = useState<Equipo | null>(null)
+  const [editingEquipo, setEditingEquipo] = useState<Equipo | "new" | null>(null)
   const [form, setForm] = useState({ nombre: "", materiaId: "", integranteIds: [] as string[] })
 
   const canManageEquipos = user?.rol === "admin" || user?.rol === "coordinadora_pi"
@@ -114,6 +114,13 @@ export default function EquiposPage() {
     setError("")
   }
 
+  function openNewModal() {
+    setEditingEquipo("new")
+    setForm({ nombre: "", materiaId: materias.find((item) => item.activa)?.id ?? materias[0]?.id ?? "", integranteIds: [] })
+    setMessage("")
+    setError("")
+  }
+
   function toggleIntegrante(userId: string) {
     setForm((current) => ({
       ...current,
@@ -131,13 +138,14 @@ export default function EquiposPage() {
     setError("")
 
     try {
+      const isNew = editingEquipo === "new"
       const response = await authFetch("/api/equipos", {
-        method: "PUT",
+        method: isNew ? "POST" : "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: editingEquipo.id,
+          ...(!isNew ? { id: editingEquipo.id } : {}),
           nombre: form.nombre,
           materiaId: form.materiaId,
           integranteIds: form.integranteIds,
@@ -150,8 +158,8 @@ export default function EquiposPage() {
         throw new Error(data.message ?? "No se pudo guardar el equipo")
       }
 
-      setEquipos((current) => current.map((equipo) => (equipo.id === data.equipo?.id ? data.equipo : equipo)))
-      setMessage("Equipo actualizado correctamente")
+      setEquipos((current) => isNew ? [...current, data.equipo as Equipo].sort((a, b) => a.nombre.localeCompare(b.nombre)) : current.map((equipo) => (equipo.id === data.equipo?.id ? data.equipo : equipo)))
+      setMessage(isNew ? "Equipo creado correctamente" : "Equipo actualizado correctamente")
       setEditingEquipo(null)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el equipo")
@@ -228,10 +236,10 @@ export default function EquiposPage() {
                 <CardTitle>Lista de equipos registrados</CardTitle>
                 <CardDescription>Datos cargados desde GET /api/equipos, GET /api/materias y GET /api/users</CardDescription>
               </div>
-              <Button onClick={loadData} variant="outline" disabled={isLoading}>
+              <div className="flex gap-2"><Button onClick={openNewModal} disabled={isLoading || materias.length === 0}><Plus className="mr-2 h-4 w-4" />Nuevo equipo</Button><Button onClick={loadData} variant="outline" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                 Refrescar
-              </Button>
+              </Button></div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -317,8 +325,8 @@ export default function EquiposPage() {
       <Dialog open={Boolean(editingEquipo)} onOpenChange={(open) => !open && setEditingEquipo(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar equipo</DialogTitle>
-            <DialogDescription>Los cambios se guardan con PUT /api/equipos.</DialogDescription>
+            <DialogTitle>{editingEquipo === "new" ? "Nuevo equipo" : "Editar equipo"}</DialogTitle>
+            <DialogDescription>{editingEquipo === "new" ? "Registra un equipo, su materia y sus integrantes." : "Actualiza los datos del equipo seleccionado."}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5">
@@ -367,7 +375,7 @@ export default function EquiposPage() {
             <Button variant="outline" onClick={() => setEditingEquipo(null)} disabled={isSaving}>Cancelar</Button>
             <Button onClick={saveEquipo} disabled={isSaving || !form.nombre.trim() || !form.materiaId}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Guardar cambios
+              {editingEquipo === "new" ? "Crear equipo" : "Guardar cambios"}
             </Button>
           </DialogFooter>
         </DialogContent>

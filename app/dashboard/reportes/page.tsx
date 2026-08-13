@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Award, Download, Printer, RefreshCw } from "lucide-react"
+import { Award, FileSpreadsheet, FileText, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Badge } from "@/components/ui/badge"
@@ -64,15 +64,19 @@ export default function ReportesPage() {
     return <div><DashboardHeader title="Acceso restringido" description="Modulo reservado para Coordinacion PI" /></div>
   }
 
-  const descargar = () => {
-    if (!reporte) return
-    const blob = new Blob([JSON.stringify(reporte, null, 2)], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement("a")
-    anchor.href = url
-    anchor.download = `reporte-${reporte.equipo?.nombre ?? "equipo"}.json`
-    anchor.click()
-    URL.revokeObjectURL(url)
+  const descargar = async (format: "csv" | "xlsx" | "pdf") => {
+    if (!reporte || !equipoId) return
+    try {
+      const response = await authFetch(`/api/reportes/${equipoId}/export?format=${format}`)
+      if (!response.ok) throw new Error("No se pudo generar el archivo")
+      const blob = await response.blob()
+      const disposition = response.headers.get("content-disposition") ?? ""
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? `reporte.${format}`
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url)
+      toast.success(`Reporte ${format.toUpperCase()} descargado`)
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Error de descarga") }
   }
 
   return (
@@ -86,8 +90,9 @@ export default function ReportesPage() {
           </Select>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => void loadReporte(equipoId)} disabled={!equipoId || loading}><RefreshCw className="mr-2 h-4 w-4" />Actualizar</Button>
-            <Button variant="outline" onClick={() => window.print()} disabled={!reporte}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
-            <Button onClick={descargar} disabled={!reporte}><Download className="mr-2 h-4 w-4" />Descargar datos</Button>
+            <Button variant="outline" onClick={() => void descargar("csv")} disabled={!reporte}><FileText className="mr-2 h-4 w-4" />CSV</Button>
+            <Button variant="outline" onClick={() => void descargar("xlsx")} disabled={!reporte}><FileSpreadsheet className="mr-2 h-4 w-4" />Excel</Button>
+            <Button onClick={() => void descargar("pdf")} disabled={!reporte}><FileText className="mr-2 h-4 w-4" />PDF</Button>
           </div>
         </div>
 
