@@ -1,40 +1,22 @@
 import { randomUUID } from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
 import { cacheLife, cacheTag } from "next/cache"
 import { CACHE_LIFE } from "@/lib/cache-tags"
 import type { Retroalimentacion } from "@/lib/types/retroalimentacion"
 import type { CreateRetroalimentacionInput } from "@/lib/validations/retroalimentacion"
+import { getStorageAdapter } from "@/lib/storage/adapter"
 
-const RETROALIMENTACIONES_FILE = path.join(process.cwd(), "data", "retroalimentaciones.json")
+const RETROALIMENTACIONES_KEY = "retroalimentaciones:all"
 const RETROALIMENTACIONES_CACHE_TAG = "retroalimentaciones"
 
-async function ensureRetroalimentacionesFile(): Promise<void> {
-  const dir = path.dirname(RETROALIMENTACIONES_FILE)
-
-  try {
-    await fs.access(dir)
-  } catch {
-    await fs.mkdir(dir, { recursive: true })
-  }
-
-  try {
-    await fs.access(RETROALIMENTACIONES_FILE)
-  } catch {
-    await fs.writeFile(RETROALIMENTACIONES_FILE, JSON.stringify([], null, 2), "utf-8")
-  }
-}
-
 async function readRetroalimentaciones(): Promise<Retroalimentacion[]> {
-  await ensureRetroalimentacionesFile()
-  const content = await fs.readFile(RETROALIMENTACIONES_FILE, "utf-8")
-  const retroalimentaciones = JSON.parse(content) as Retroalimentacion[]
-  return Array.isArray(retroalimentaciones) ? retroalimentaciones : []
+  const storage = getStorageAdapter()
+  const content = await storage.get<Retroalimentacion[]>(RETROALIMENTACIONES_KEY)
+  return Array.isArray(content) ? content : []
 }
 
 async function writeRetroalimentaciones(retroalimentaciones: Retroalimentacion[]): Promise<void> {
-  await ensureRetroalimentacionesFile()
-  await fs.writeFile(RETROALIMENTACIONES_FILE, JSON.stringify(retroalimentaciones, null, 2), "utf-8")
+  const storage = getStorageAdapter()
+  await storage.set<Retroalimentacion[]>(RETROALIMENTACIONES_KEY, retroalimentaciones)
 }
 
 export async function getAllRetroalimentaciones(): Promise<Retroalimentacion[]> {

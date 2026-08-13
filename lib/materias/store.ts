@@ -1,6 +1,4 @@
 import { randomUUID } from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
 import { cacheLife, cacheTag } from "next/cache"
 import { CACHE_LIFE, CACHE_TAGS } from "@/lib/cache-tags"
 import type { Materia } from "@/lib/types/materia"
@@ -8,8 +6,9 @@ import type {
   CreateMateriaInput,
   UpdateMateriaInput,
 } from "@/lib/validations/materia"
+import { getStorageAdapter } from "@/lib/storage/adapter"
 
-const MATERIAS_FILE = path.join(process.cwd(), "data", "materias.json")
+const MATERIAS_KEY = "materias:all"
 
 const SEED_MATERIAS: Materia[] = [
   {
@@ -56,32 +55,22 @@ const SEED_MATERIAS: Materia[] = [
   },
 ]
 
-async function ensureMateriasFile(): Promise<void> {
-  const dir = path.dirname(MATERIAS_FILE)
-
-  try {
-    await fs.access(dir)
-  } catch {
-    await fs.mkdir(dir, { recursive: true })
-  }
-
-  try {
-    await fs.access(MATERIAS_FILE)
-  } catch {
-    await fs.writeFile(MATERIAS_FILE, JSON.stringify(SEED_MATERIAS, null, 2), "utf-8")
-  }
-}
-
 async function readMaterias(): Promise<Materia[]> {
-  await ensureMateriasFile()
-  const content = await fs.readFile(MATERIAS_FILE, "utf-8")
-  const materias = JSON.parse(content) as Materia[]
+  const storage = getStorageAdapter()
+  let materias = await storage.get<Materia[]>(MATERIAS_KEY)
+
+  // Initialize with seed data on first run
+  if (!materias || !Array.isArray(materias) || materias.length === 0) {
+    materias = SEED_MATERIAS
+    await storage.set<Materia[]>(MATERIAS_KEY, materias)
+  }
+
   return Array.isArray(materias) ? materias : []
 }
 
 async function writeMaterias(materias: Materia[]): Promise<void> {
-  await ensureMateriasFile()
-  await fs.writeFile(MATERIAS_FILE, JSON.stringify(materias, null, 2), "utf-8")
+  const storage = getStorageAdapter()
+  await storage.set<Materia[]>(MATERIAS_KEY, materias)
 }
 
 export async function getAllMaterias(): Promise<Materia[]> {

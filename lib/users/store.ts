@@ -1,36 +1,18 @@
 import { randomUUID } from "crypto"
-import { promises as fs } from "fs"
-import path from "path"
 import type { AuthUser, Role, StoredUser } from "@/lib/types/auth"
+import { getStorageAdapter } from "@/lib/storage/adapter"
 
-const USERS_FILE = path.join(process.cwd(), "data", "users.json")
-
-async function ensureUsersFile(): Promise<void> {
-  const dir = path.dirname(USERS_FILE)
-
-  try {
-    await fs.access(dir)
-  } catch {
-    await fs.mkdir(dir, { recursive: true })
-  }
-
-  try {
-    await fs.access(USERS_FILE)
-  } catch {
-    await fs.writeFile(USERS_FILE, JSON.stringify([], null, 2), "utf-8")
-  }
-}
+const USERS_KEY = "users:all"
 
 async function readUsers(): Promise<StoredUser[]> {
-  await ensureUsersFile()
-  const content = (await fs.readFile(USERS_FILE, "utf-8")).replace(/^\uFEFF/, "")
-  const users = JSON.parse(content) as StoredUser[]
+  const storage = getStorageAdapter()
+  const users = await storage.get<StoredUser[]>(USERS_KEY)
   return Array.isArray(users) ? users : []
 }
 
 async function writeUsers(users: StoredUser[]): Promise<void> {
-  await ensureUsersFile()
-  await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), "utf-8")
+  const storage = getStorageAdapter()
+  await storage.set<StoredUser[]>(USERS_KEY, users)
 }
 
 export function toPublicUser(user: StoredUser): AuthUser {
