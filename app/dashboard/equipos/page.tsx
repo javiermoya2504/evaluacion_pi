@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { useAutoRefresh } from "@/hooks/use-auto-refresh"
 import { useAuth } from "@/contexts/auth-context"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -62,14 +63,6 @@ export default function EquiposPage() {
 
   const canManageEquipos = user?.rol === "admin" || user?.rol === "coordinadora_pi"
 
-  useEffect(() => {
-    if (!canManageEquipos) {
-      return
-    }
-
-    loadData()
-  }, [canManageEquipos])
-
   const filteredEquipos = useMemo(
     () =>
       equipos.filter((equipo) => {
@@ -79,7 +72,8 @@ export default function EquiposPage() {
     [equipos, query],
   )
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
+    if (!canManageEquipos || editingEquipo) return
     setIsLoading(true)
     setError("")
 
@@ -106,7 +100,8 @@ export default function EquiposPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [canManageEquipos, editingEquipo])
+  useAutoRefresh(loadData)
 
   function openEditModal(equipo: Equipo) {
     setEditingEquipo(equipo)

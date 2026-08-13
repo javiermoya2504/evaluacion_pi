@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { useAutoRefresh } from "@/hooks/use-auto-refresh"
 import { useAuth } from "@/contexts/auth-context"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Badge } from "@/components/ui/badge"
@@ -30,8 +31,7 @@ export default function EvaluacionesPage() {
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
-  useEffect(() => { void load() }, [])
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true); setError("")
     try {
       const [a,b,c] = await Promise.all([authFetch("/api/equipos"), authFetch("/api/rubricas/global"), authFetch("/api/evaluaciones")])
@@ -40,7 +40,8 @@ export default function EvaluacionesPage() {
       setEquipoId(current => current || ea.equipos[0]?.id || ""); setRubricaId(current => current || rb.rubricas[0]?.id || "")
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Error de carga") }
     finally { setLoading(false) }
-  }
+  }, [])
+  useAutoRefresh(load)
   const rubric = useMemo(() => rubricas.find(item => item.id === rubricaId), [rubricas, rubricaId])
   const teamName = (id:string) => equipos.find(item => item.id === id)?.nombre ?? id
   const rubricName = (id:string) => rubricas.find(item => item.id === id)?.nombre ?? id

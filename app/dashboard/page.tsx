@@ -1,7 +1,12 @@
 "use client"
 
+import { useCallback, useState } from "react"
+
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
+import { authFetch } from "@/lib/client-api"
+import { useAutoRefresh } from "@/hooks/use-auto-refresh"
+import type { DashboardData, DashboardSummary } from "@/lib/types/dashboard"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -59,12 +64,14 @@ function HeroPanel({
   description,
   action,
   href,
+  progress,
 }: {
   eyebrow: string
   title: string
   description: string
   action: string
   href: string
+  progress: number
 }) {
   return (
     <section className="rounded-2xl bg-[#0b2f2f] p-6 text-white shadow-lg shadow-teal-950/10">
@@ -82,9 +89,9 @@ function HeroPanel({
         <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/10 p-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-teal-50/72">Avance del periodo</span>
-            <span className="font-semibold">76%</span>
+            <span className="font-semibold">{progress}%</span>
           </div>
-          <Progress value={76} className="h-2 bg-white/20" />
+          <Progress value={progress} className="h-2 bg-white/20" />
           <Button asChild className="mt-2 bg-white text-[#0b2f2f] hover:bg-teal-50">
             <Link href={href}>
               {action}
@@ -97,44 +104,39 @@ function HeroPanel({
   )
 }
 
-function CoordinadoraDashboard() {
+function CoordinadoraDashboard({ summary, projects }: { summary: DashboardSummary; projects: DashboardData["proyectos"] }) {
   const metrics: Metric[] = [
     {
       label: "Proyectos PI",
-      value: "24",
-      detail: "18 en revision, 6 en cierre",
+      value: String(summary.proyectos),
+      detail: `${summary.proyectosEnDesarrollo} en desarrollo, ${summary.proyectosFinalizados} finalizados`,
       icon: BookOpenCheck,
       tone: "bg-teal-50 text-teal-700",
     },
     {
       label: "Equipos registrados",
-      value: "42",
-      detail: "5 carreras participantes",
+      value: String(summary.equipos),
+      detail: `${new Set(projects.map((item) => item.carrera)).size} carreras participantes`,
       icon: Users,
       tone: "bg-blue-50 text-blue-700",
     },
     {
       label: "Evaluaciones",
-      value: "91%",
-      detail: "avance global validado",
+      value: String(summary.evaluaciones),
+      detail: `${summary.equiposEvaluados} equipos evaluados`,
       icon: ClipboardCheck,
       tone: "bg-emerald-50 text-emerald-700",
     },
     {
-      label: "Alertas",
-      value: "3",
-      detail: "requieren seguimiento",
+      label: "Avance promedio",
+      value: `${summary.avancePromedio}%`,
+      detail: "calculado desde proyectos",
       icon: Clock3,
       tone: "bg-amber-50 text-amber-700",
     },
   ]
 
-  const stages = [
-    ["Registro de equipos", 100],
-    ["Validacion de rubricas", 86],
-    ["Evaluacion docente", 72],
-    ["Reporte final", 48],
-  ] as const
+  const stages = projects.slice(0, 6).map((item) => [item.nombre, item.progreso] as const)
 
   return (
     <div className="flex flex-col">
@@ -149,6 +151,7 @@ function CoordinadoraDashboard() {
           description="Esta vista prioriza indicadores globales, alertas de seguimiento y accesos rapidos para tomar decisiones durante el cierre del periodo."
           action="Revisar reportes"
           href="/dashboard/reportes"
+          progress={summary.avancePromedio}
         />
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -205,13 +208,9 @@ function CoordinadoraDashboard() {
   )
 }
 
-function JefeAsignaturaDashboard() {
+function JefeAsignaturaDashboard({ summary, projects }: { summary: DashboardSummary; projects: DashboardData["proyectos"] }) {
   const { user } = useAuth()
-  const rubricas = [
-    ["Arquitectura y diseno", "Activa", 100],
-    ["Desarrollo funcional", "En revision", 72],
-    ["Documentacion tecnica", "Borrador", 45],
-  ] as const
+  const rubricas = projects.slice(0, 6).map((item) => [item.nombre, item.estado, item.progreso] as const)
 
   return (
     <div className="flex flex-col">
@@ -226,13 +225,14 @@ function JefeAsignaturaDashboard() {
           description="Tu panel se enfoca en criterios, parciales y consistencia academica para que los profesores evaluen con el mismo estandar."
           action="Editar rubricas"
           href="/dashboard/rubricas"
+          progress={summary.avancePromedio}
         />
 
         <div className="grid gap-4 md:grid-cols-3">
           {[
-            { label: "Rubricas activas", value: "3", detail: "1 lista para publicar", icon: FileText, tone: "bg-blue-50 text-blue-700" },
-            { label: "Criterios definidos", value: "18", detail: "ponderaciones completas", icon: Layers3, tone: "bg-teal-50 text-teal-700" },
-            { label: "Proyectos vinculados", value: "12", detail: "en seguimiento", icon: BookOpenCheck, tone: "bg-amber-50 text-amber-700" },
+            { label: "Rubricas", value: String(summary.rubricas), detail: `${summary.rubricasCompletas} con ponderacion completa`, icon: FileText, tone: "bg-blue-50 text-blue-700" },
+            { label: "Criterios definidos", value: String(summary.criterios), detail: "cargados desde Neon", icon: Layers3, tone: "bg-teal-50 text-teal-700" },
+            { label: "Proyectos vinculados", value: String(summary.proyectos), detail: `${summary.proyectosEnDesarrollo} en desarrollo`, icon: BookOpenCheck, tone: "bg-amber-50 text-amber-700" },
           ].map((metric) => (
             <MetricCard key={metric.label} metric={metric} />
           ))}
@@ -285,12 +285,7 @@ function JefeAsignaturaDashboard() {
   )
 }
 
-function ProfesorDashboard() {
-  const assignedTeams = [
-    ["Aurum", "Sistema de gestion de laboratorios", "Pendiente", "30 min"],
-    ["Nexus", "App de seguimiento academico", "En proceso", "45 min"],
-    ["Innova", "Panel IoT para energia", "Evaluado", "92"],
-  ] as const
+function ProfesorDashboard({ summary, projects }: { summary: DashboardSummary; projects: DashboardData["proyectos"] }) {
 
   return (
     <div className="flex flex-col">
@@ -305,13 +300,14 @@ function ProfesorDashboard() {
           description="Esta vista destaca pendientes reales, tiempo estimado y estado de retroalimentacion para cerrar evaluaciones sin perder trazabilidad."
           action="Comenzar evaluacion"
           href="/dashboard/evaluaciones"
+          progress={summary.avancePromedio}
         />
 
         <div className="grid gap-4 md:grid-cols-3">
           {[
-            { label: "Equipos asignados", value: "3", detail: "2 pendientes", icon: Users, tone: "bg-teal-50 text-teal-700" },
-            { label: "Tiempo estimado", value: "75m", detail: "para cierre total", icon: Clock3, tone: "bg-amber-50 text-amber-700" },
-            { label: "Retroalimentacion", value: "1/3", detail: "completada", icon: MessageSquareText, tone: "bg-blue-50 text-blue-700" },
+            { label: "Equipos disponibles", value: String(summary.equipos), detail: `${summary.equiposEvaluados} evaluados por ti`, icon: Users, tone: "bg-teal-50 text-teal-700" },
+            { label: "Evaluaciones", value: String(summary.evaluaciones), detail: "registradas por tu cuenta", icon: Clock3, tone: "bg-amber-50 text-amber-700" },
+            { label: "Retroalimentacion", value: String(summary.retroalimentaciones), detail: "comentarios registrados", icon: MessageSquareText, tone: "bg-blue-50 text-blue-700" },
           ].map((metric) => (
             <MetricCard key={metric.label} metric={metric} />
           ))}
@@ -323,26 +319,24 @@ function ProfesorDashboard() {
             <CardDescription>Prioridad de proyectos asignados para este periodo</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {assignedTeams.map(([team, project, status, meta]) => (
-              <div key={team} className="grid gap-4 rounded-xl border border-slate-200 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+            {projects.map((project) => (
+              <div key={project.id} className="grid gap-4 rounded-xl border border-slate-200 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div className="flex items-start gap-4">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
                     <Gauge className="h-5 w-5" />
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-slate-950">Equipo {team}</p>
-                      <Badge variant={status === "Evaluado" ? "default" : "outline"}>{status}</Badge>
+                      <p className="font-semibold text-slate-950">{project.nombre}</p>
+                      <Badge variant={project.estado === "finalizado" ? "default" : "outline"}>{project.estado}</Badge>
                     </div>
-                    <p className="mt-1 text-sm text-slate-600">{project}</p>
-                    <p className="mt-1 text-xs font-medium text-slate-500">
-                      {status === "Evaluado" ? `Calificacion: ${meta}` : `Tiempo estimado: ${meta}`}
-                    </p>
+                    <p className="mt-1 text-sm text-slate-600">{project.carrera}</p>
+                    <Progress value={project.progreso} className="mt-2 h-2" />
                   </div>
                 </div>
-                <Button asChild variant={status === "Evaluado" ? "outline" : "default"}>
+                <Button asChild variant={project.estado === "finalizado" ? "outline" : "default"}>
                   <Link href="/dashboard/evaluaciones">
-                    {status === "Evaluado" ? "Ver detalle" : "Evaluar"}
+                    {project.estado === "finalizado" ? "Ver detalle" : "Evaluar"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -398,18 +392,35 @@ function AlumnoDashboard() {
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [error, setError] = useState("")
+  const load = useCallback(async () => {
+    if (!user) return
+    try {
+      const response = await authFetch("/api/dashboard/summary", { cache: "no-store" })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.message || "No se pudieron actualizar las metricas")
+      setData(payload)
+      setError("")
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudieron actualizar las metricas")
+    }
+  }, [user])
+  useAutoRefresh(load)
+
+  if (!data) return <div className="p-6 text-sm text-slate-600">{error || "Actualizando metricas..."}</div>
 
   if (user?.rol === "jefe_asignatura") {
-    return <JefeAsignaturaDashboard />
+    return <JefeAsignaturaDashboard summary={data.summary} projects={data.proyectos} />
   }
 
   if (user?.rol === "profesor") {
-    return <ProfesorDashboard />
+    return <ProfesorDashboard summary={data.summary} projects={data.proyectos} />
   }
 
   if (user?.rol === "alumno") {
     return <AlumnoDashboard />
   }
 
-  return <CoordinadoraDashboard />
+  return <CoordinadoraDashboard summary={data.summary} projects={data.proyectos} />
 }

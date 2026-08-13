@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { useAutoRefresh } from "@/hooks/use-auto-refresh"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -26,13 +27,13 @@ export default function ProyectosPage() {
   const [editing, setEditing] = useState<Proyecto | null | "new">(null)
   const [form, setForm] = useState(emptyForm)
 
-  useEffect(() => { void load() }, [])
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true); setError("")
     try { const response = await authFetch("/api/proyectos"); const data = await response.json(); if (!response.ok) throw new Error(data.message); setProyectos(data.proyectos) }
     catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudieron cargar los proyectos") }
     finally { setLoading(false) }
-  }
+  }, [])
+  useAutoRefresh(load)
   const filtered = useMemo(() => proyectos.filter((item) => `${item.nombre} ${item.descripcion} ${item.carrera}`.toLowerCase().includes(query.toLowerCase())), [proyectos, query])
   function openNew() { setForm(emptyForm); setEditing("new"); setError("") }
   function openEdit(item: Proyecto) { const { id: _id, createdAt: _createdAt, ...values } = item; void _id; void _createdAt; setForm(values); setEditing(item); setError("") }

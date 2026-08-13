@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
+import { useAutoRefresh } from "@/hooks/use-auto-refresh"
 import { useAuth } from "@/contexts/auth-context"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Badge } from "@/components/ui/badge"
@@ -79,17 +80,9 @@ export default function RubricasPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!canManageRubricas) {
-      return
-    }
-
-    const timer = window.setTimeout(() => {
-      loadRubricas()
-    }, 0)
-
-    return () => window.clearTimeout(timer)
-  }, [canManageRubricas, loadRubricas])
+  useAutoRefresh(async () => {
+    if (canManageRubricas && !isSaving) await loadRubricas()
+  })
 
   function loadRubricaIntoForm(rubrica: Rubrica) {
     setNombre(rubrica.nombre)
