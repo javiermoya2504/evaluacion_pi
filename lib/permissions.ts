@@ -14,5 +14,9 @@ export function hasPermission(role: UserRole, path: string): boolean {
   const cleanPath = path.replace(/\/$/, "")
   const allowedPaths = ROLE_PERMISSIONS[role] || []
 
-  return allowedPaths.some((allowed) => cleanPath === allowed || cleanPath.startsWith(`${allowed}/`))
+  return allowedPaths.some((allowed) => {
+    if (cleanPath === allowed) return true
+    if (allowed === "/dashboard") return false
+    return cleanPath.startsWith(`${allowed}/`)
+  })
 }
