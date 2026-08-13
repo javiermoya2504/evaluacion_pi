@@ -39,68 +39,6 @@ const AUTH_STORAGE_KEY = "sigep_user"
 const AUTH_TOKEN_STORAGE_KEY = "sigep_token"
 const AUTH_STORAGE_EVENT = "sigep-auth-change"
 
-const demoUsers: Record<string, User & { password: string }> = {
-  "coordinadora@upq.mx": {
-    id: "1",
-    nombre: "Dra. Laura Mendoza Rivera",
-    email: "coordinadora@upq.mx",
-    rol: "coordinadora_pi",
-    carrera: "Ingenieria en Software",
-    password: "admin123",
-  },
-  "jefe@upq.mx": {
-    id: "2",
-    nombre: "Mtro. Daniel Hernandez Soto",
-    email: "jefe@upq.mx",
-    rol: "jefe_asignatura",
-    asignatura: "Desarrollo de Software",
-    carrera: "Ingenieria en Software",
-    password: "jefe123",
-  },
-  "profesor@upq.mx": {
-    id: "3",
-    nombre: "Ing. Ana Sofia Torres Vega",
-    email: "profesor@upq.mx",
-    rol: "profesor",
-    carrera: "Ingenieria en Software",
-    password: "prof123",
-  },
-  "coordinadora@utt.edu.mx": {
-    id: "1",
-    nombre: "Dra. Maria Gonzalez Hernandez",
-    email: "coordinadora@utt.edu.mx",
-    rol: "coordinadora_pi",
-    carrera: "Ingenieria en Software",
-    password: "admin123",
-  },
-  "jefe.programacion@utt.edu.mx": {
-    id: "2",
-    nombre: "Ing. Carlos Ramirez Lopez",
-    email: "jefe.programacion@utt.edu.mx",
-    rol: "jefe_asignatura",
-    asignatura: "Programacion Web",
-    carrera: "ISC",
-    password: "jefe123",
-  },
-  "jefe.bd@utt.edu.mx": {
-    id: "3",
-    nombre: "Mtro. Roberto Sanchez Perez",
-    email: "jefe.bd@utt.edu.mx",
-    rol: "jefe_asignatura",
-    asignatura: "Desarrollo de Software",
-    carrera: "Ingenieria en Software",
-    password: "jefe123",
-  },
-  "profesor@utt.edu.mx": {
-    id: "4",
-    nombre: "Ing. Ana Martinez Ruiz",
-    email: "profesor@utt.edu.mx",
-    rol: "profesor",
-    carrera: "Ingenieria en Software",
-    password: "prof123",
-  },
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
@@ -111,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 function AuthStateProvider({ children }: { children: ReactNode }) {
   const [isAuthenticating, setIsAuthenticating] = useState(false)
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const storedUserValue = useSyncExternalStore(
     subscribeToStoredUser,
@@ -119,15 +57,8 @@ function AuthStateProvider({ children }: { children: ReactNode }) {
     () => null,
   )
   const storedUser = useMemo(() => parseStoredUser(storedUserValue), [storedUserValue])
-  const googleUser = useMemo(() => getGoogleUser(session?.user), [session?.user])
-  const user = googleUser ?? storedUser
+  const user = storedUser
   const isLoading = status === "loading" || isAuthenticating
-
-  useEffect(() => {
-    if (googleUser) {
-      clearStoredUser()
-    }
-  }, [googleUser])
 
   useEffect(() => {
     if (user) {
@@ -201,43 +132,6 @@ function AuthStateProvider({ children }: { children: ReactNode }) {
   )
 }
 
-function getGoogleUser(sessionUser: unknown): User | null {
-  if (!sessionUser || typeof sessionUser !== "object") {
-    return null
-  }
-
-  const userData = sessionUser as {
-    name?: string | null
-    email?: string | null
-    image?: string | null
-  }
-
-  if (!userData.email) {
-    return null
-  }
-
-  const email = userData.email.toLowerCase()
-  const demoUser = demoUsers[email]
-
-  if (demoUser) {
-    const userWithoutPassword = removePassword(demoUser)
-    return {
-      ...userWithoutPassword,
-      nombre: userData.name || userWithoutPassword.nombre,
-      avatar: userData.image || userWithoutPassword.avatar,
-    }
-  }
-
-  return {
-    id: email,
-    nombre: userData.name || email,
-    email,
-    rol: "profesor",
-    carrera: "ISC",
-    avatar: userData.image || undefined,
-  }
-}
-
 function subscribeToStoredUser(onChange: () => void) {
   window.addEventListener("storage", onChange)
   window.addEventListener(AUTH_STORAGE_EVENT, onChange)
@@ -278,12 +172,6 @@ function clearStoredUser() {
   localStorage.removeItem(AUTH_STORAGE_KEY)
   localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
   window.dispatchEvent(new Event(AUTH_STORAGE_EVENT))
-}
-
-function removePassword(user: User & { password: string }): User {
-  const { password, ...userWithoutPassword } = user
-  void password
-  return userWithoutPassword
 }
 
 export function useAuth() {

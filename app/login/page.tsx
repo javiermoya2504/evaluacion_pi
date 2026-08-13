@@ -150,7 +150,8 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => {
     setError("")
-    signIn("google", { callbackUrl: "/dashboard" }, { prompt: "select_account" })
+    const callbackUrl = `/auth/google/complete?role=${encodeURIComponent(selectedRole)}`
+    signIn("google", { callbackUrl }, { prompt: "select_account" })
   }
 
   return (
@@ -367,7 +368,7 @@ export default function LoginPage() {
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-sm font-bold text-slate-900">
                       G
                     </span>
-                    Continuar con Google
+                    Continuar con Google como {selectedProfile.title}
                   </Button>
 
                   <p className="text-center text-sm text-slate-600">

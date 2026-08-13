@@ -50,3 +50,23 @@ export async function createUser(input: {
     throw error
   }
 }
+
+export async function findOrCreateOAuthUser(input: {
+  email: string
+  nombre: string
+  rol: Extract<Role, "coordinadora_pi" | "jefe_asignatura" | "profesor">
+  passwordHash: string
+}): Promise<AuthUser> {
+  const existingUser = await findUserByEmail(input.email)
+  if (existingUser) return toPublicUser(existingUser)
+
+  try {
+    return await createUser(input)
+  } catch (error) {
+    if (error instanceof Error && error.message === "EMAIL_ALREADY_EXISTS") {
+      const concurrentUser = await findUserByEmail(input.email)
+      if (concurrentUser) return toPublicUser(concurrentUser)
+    }
+    throw error
+  }
+}
