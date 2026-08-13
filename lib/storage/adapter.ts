@@ -1,6 +1,13 @@
 /**
- * Storage adapter interface - supports both JSON (local) and Vercel KV (production)
+ * Storage adapter interface - supports both JSON (local) and Upstash Redis (production)
+ * 
+ * Production uses Upstash Redis (via Vercel Marketplace integration)
+ * Local development uses JSON files
  */
+
+import { promises as fs } from "fs"
+import path from "path"
+import type { Redis as UpstashRedisClient } from "@upstash/redis"
 
 export interface StorageAdapter {
   get<T>(key: string): Promise<T | null>
@@ -11,11 +18,14 @@ export interface StorageAdapter {
 
 /**
  * Get the appropriate storage adapter based on environment
+ * 
+ * Production: Upstash Redis requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+ * Local: JSON files in data/ directory
  */
 export function getStorageAdapter(): StorageAdapter {
-  if (process.env.KV_REST_API_URL) {
-    // Use Vercel KV in production
-    return new VercelKVAdapter()
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    // Use Upstash Redis in production (from Vercel Marketplace integration)
+    return new UpstashRedisAdapter()
   }
   // Use JSON files in development
   return new JSONAdapter()
@@ -24,8 +34,6 @@ export function getStorageAdapter(): StorageAdapter {
 /**
  * JSON-based adapter for local development
  */
-import { promises as fs } from "fs"
-import path from "path"
 
 class JSONAdapter implements StorageAdapter {
   private dataDir = path.join(process.cwd(), "data")
@@ -85,23 +93,50 @@ class JSONAdapter implements StorageAdapter {
 }
 
 /**
- * Vercel KV adapter for production
+ * Upstash Redis adapter for production (Vercel Marketplace)
+ * 
+ * Requires:
+ * - UPSTASH_REDIS_REST_URL: REST API URL
+ * - UPSTASH_REDIS_REST_TOKEN: Authentication token
+ * 
+ * These are automatically set by Vercel when you add Upstash Redis integration
  */
-class VercelKVAdapter implements StorageAdapter {
+
+class UpstashRedisAdapter implements StorageAdapter {
+  private client: UpstashRedisClient | null = null
+
+  private async getClient(): Promise<UpstashRedisClient> {
+    if (this.client) return this.client
+
+    const { Redis } = await import("@upstash/redis")
+    const url = process.env.UPSTASH_REDIS_REST_URL
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN
+
+    if (!url || !token) {
+      throw new Error(
+        "Upstash Redis not configured. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN"
+      )
+    }
+
+    this.client = new Redis({ url, token })
+    return this.client
+  }
+
   async get<T>(key: string): Promise<T | null> {
     try {
-      const { kv } = await import("@vercel/kv")
-      const value = await kv.get(key)
+      const client = await this.getClient()
+      const value = await client.get(key)
       return (value as T) || null
-    } catch {
+    } catch (error) {
+      console.error(`[Storage] Failed to get key ${key}:`, error)
       return null
     }
   }
 
   async set<T>(key: string, value: T): Promise<void> {
     try {
-      const { kv } = await import("@vercel/kv")
-      await kv.set(key, value)
+      const client = await this.getClient()
+      await client.set(key, JSON.stringify(value))
     } catch (error) {
       console.error(`[Storage] Failed to set key ${key}:`, error)
       throw error
@@ -110,17 +145,19 @@ class VercelKVAdapter implements StorageAdapter {
 
   async delete(key: string): Promise<void> {
     try {
-      const { kv } = await import("@vercel/kv")
-      await kv.del(key)
-    } catch {
-      // Key doesn't exist, that's fine
+      const client = await this.getClient()
+      await client.del(key)
+    } catch (error) {
+      console.error(`[Storage] Failed to delete key ${key}:`, error)
+      // Don't throw - key might not exist
     }
   }
 
   async list(pattern: string): Promise<string[]> {
     try {
-      // KV doesn't support pattern matching - return empty array
-      // For production, implement a separate index key if needed
+      // Redis SCAN/KEYS are not available in Upstash REST API
+      // For now, return empty array
+      // In production, consider maintaining a separate keys index
       void pattern // Acknowledge unused parameter
       return []
     } catch {
